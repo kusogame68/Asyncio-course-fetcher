@@ -1,0 +1,17 @@
+driver:
+#- --headless
+  - --window-size=1920,1080
+  - --disable-gpu
+  - --page-load-strategy=eager
+  - --disable-extensions
+  - --disable-notifications
+  - --disable-popup-blocking
+  - --log-level=3
+  - --disable-blink-features=AutomationControlled
+
+login:
+  account: #Input account
+  password: #Input password
+
+
+
