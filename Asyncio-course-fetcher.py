@@ -11,7 +11,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.action_chains import ActionChains
-from datetime import datetime as dt
 from fake_useragent import UserAgent
 from paddleocr import PaddleOCR
 from functools import partial
@@ -36,8 +35,7 @@ LOG_FILENAME: Final[str] = "Asyncio.log"
 ACCOUNT: Optional[str]  = None # Loaded from config.yaml
 PASSWORD: Optional[str] = None # Loaded from config.yaml
 MAX_RETRY: int = 3
-TIME_COUNTER: float = round( (random.choices(range(2, 10)) [0]) * .1, 1)
-
+TIME_COUNTER: float = lambda: round(random.choice(range(2, 10)) * .1, 1)
 
 def setup_log() -> logging.Logger:
 
@@ -71,22 +69,20 @@ def setup_driver() -> Optional[uc.Chrome]:
 
         with open("config.yaml", "r", encoding="utf-8-sig") as yaml_f:
             configs = yaml.safe_load(yaml_f)
-            
+
         ACCOUNT  = configs["login"]["account"]
         PASSWORD = configs["login"]["password"]
-            
+
         for config in configs["driver"]:
             chrome_options.add_argument(config)
 
         driver = uc.Chrome(options = chrome_options)
-        
+
         driver.set_page_load_timeout(30)
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Driver initialized successfully.")
-        console_log.info("Driver initialized successfully.")
+        console_log.info("Driver initialized success.")
         return driver
 
     except Exception as e:
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Drive initialized fail : {e}")
         console_log.error(f"Drive initialized fail : {e}")
         return None
 
@@ -101,7 +97,6 @@ def analysis_element(driver: uc.Chrome,
         return get_element
 
     except Exception as e:
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Analysis_element fail : {e}")
         console_log.error(f"Analysis_element fail : {e}")
         return None
 
@@ -120,8 +115,7 @@ def ocr_img_sync(driver: uc.Chrome,
         parser_content: str = ""
 
         ocr = PaddleOCR(use_textline_orientation = True, lang="en")
-        # print("OCR initialized successfully.")
-        console_log.debug("OCR initialized successfully.")
+        console_log.info("OCR initialized success.")
 
         """ 
             Image preprocessing.
@@ -135,7 +129,12 @@ def ocr_img_sync(driver: uc.Chrome,
                 - For common numbers, a kernel of np.ones((2, 3), np.uint8) works best.
                 - For the number 1, a kernel of (3, 5) is more effective.
                 - Numbers 3 and 4 are prone to failure due to their severe curvature.
+
+            Note:
+                - Testing on different computers shows that recognition performance can still vary, even with identical CPUs and GPUs.
+
             There is no one-size-fits-all solution.
+            Try incrementing or decrementing the value by 1~2.
         """
         kernel: np.ndarray        = np.ones((2, 3), np.uint8)
         denoising_img: np.ndarray = cv2.imread(denoising_path, cv2.IMREAD_GRAYSCALE)
@@ -154,16 +153,13 @@ def ocr_img_sync(driver: uc.Chrome,
             parser_content += content
 
         if len(parser_content) == 5:
-            # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} OCR captcha successfully recognized : {parser_content}")
-            console_log.info(f"OCR captcha successfully recognized : {parser_content}")
+            console_log.info(f"OCR captcha success recognized : {parser_content}")
             return parser_content
         else:
-            # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} OCR failed : {parser_content}")
-            console_log.warning(f"OCR failed : {parser_content}")
+            console_log.warning(f"OCR fail : {parser_content}")
             return None
 
     except Exception as e:
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} OCR_img fail : {e}")
         console_log.error(f"OCR_img fail : {e}")
         return None
 
@@ -185,28 +181,25 @@ async def ocr_img_async(driver: uc.Chrome, element: WebElement) -> Optional[str]
             return result
 
         except Exception as e:
-            # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} OCR async execution failed : {e}")
-            console_log.error(f"OCR async execution failed : {e}")
+            console_log.error(f"OCR async execution fail : {e}")
             return None
-
 
 async def send_key_to_element(driver: uc.Chrome,
                               element: WebElement,
                               content: str) -> Optional[bool]:
 
     try:
-        await asyncio.sleep(TIME_COUNTER)
+        element.clear()
+        await asyncio.sleep(TIME_COUNTER())
 
         actions: ActionChains = ActionChains(driver)
         actions.click(element).send_keys(content).perform()
 
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Key sent successfully.")
-        console_log.info("Key sent successfully.")
+        console_log.info("Key send success.")
         return True
 
     except Exception as e:
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Send key fail : {e}")
-        console_log.error(f"Send key failed : {e}")
+        console_log.error(f"Send key fail : {e}")
         return None
 
 async def send_click_to_element(driver: uc.Chrome,
@@ -216,18 +209,15 @@ async def send_click_to_element(driver: uc.Chrome,
         actions: ActionChains = ActionChains(driver)
         actions.click(element).perform()
 
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Click sent successfully.")
-        console_log.info("Click sent successfully.")
+        console_log.info("Click send success.")
         return True
 
     except Exception as e:
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Click the key fail : {e}")
-        console_log.error(f"Click failed : {e}")
+        console_log.error(f"Click fail : {e}")
         return None
 
 async def process_captcha(driver: uc.Chrome) -> Optional[str]:
 
-    # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Starting captcha processing...")
     console_log.info("Starting captcha processing...")
 
     try:
@@ -240,18 +230,15 @@ async def process_captcha(driver: uc.Chrome) -> Optional[str]:
             Use asynchronous process the OCR.
         """
         captcha_code = await ocr_img_async(driver, vimg_element)
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Captcha processing completed.")
         console_log.info("Captcha processing completed.")
         return captcha_code
 
     except Exception as e:
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Process captcha fail : {e}")
-        console_log.error(f"Process captcha failed : {e}")
+        console_log.error(f"Process captcha fail : {e}")
         return None
 
 async def input_credentials(driver: uc.Chrome) -> tuple[bool, bool]:
 
-    # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Starting credential input...")
     console_log.info("Starting credential input...")
 
     try:
@@ -275,19 +262,16 @@ async def input_credentials(driver: uc.Chrome) -> tuple[bool, bool]:
         account_success = account_result if not isinstance(account_result, Exception) else False
         password_success = password_result if not isinstance(password_result, Exception) else False
 
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Credential input completed.")
         console_log.info("Credential input completed.")
         return account_success, password_success
 
     except Exception as e:
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Input credentials fail : {e}")
-        console_log.error(f"Input credentials failed : {e}")
+        console_log.error(f"Input credentials fail : {e}")
         return False, False
 
 async def login_attempt(driver: uc.Chrome) -> Optional[bool]:
 
     try:
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Starting concurrent operations...")
         console_log.info("Starting concurrent operations...")
 
         account_passwork_input: tuple[bool, bool] = input_credentials(driver)
@@ -297,17 +281,14 @@ async def login_attempt(driver: uc.Chrome) -> Optional[bool]:
             capcha_input, account_passwork_input
         )
 
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Concurrent operations completed.")
         console_log.info("Concurrent operations completed.")
 
         if not account_success:
-            # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Failed to input account.")
-            console_log.warning("Failed to input account.")
+            console_log.warning("Fail to input account.")
             return
 
         if not password_success:
-            # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Failed to input password.")
-            console_log.warning("Failed to input password.")
+            console_log.warning("Fail to input password.")
             return
 
         if not captcha_code:
@@ -315,38 +296,33 @@ async def login_attempt(driver: uc.Chrome) -> Optional[bool]:
 
             if vimg_element:
                 await send_click_to_element(driver, vimg_element)
-                # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Failed process captcha.")
-                console_log.warning("Failed process captcha.")
-                await asyncio.sleep(TIME_COUNTER)
+                console_log.warning("Fail process captcha.")
+                
+                await asyncio.sleep(TIME_COUNTER())
             return
 
-        captcha_element: Optional[WebElement] = analysis_element(driver, By.ID, "ValidCode_login")
-        submit_button: Optional[WebElement]   = analysis_element(driver, By.CLASS_NAME, "btn-primary")
+        captcha_input: Optional[WebElement] = analysis_element(driver, By.ID, "ValidCode_login")
+        submit_button: Optional[WebElement] = analysis_element(driver, By.CLASS_NAME, "btn-primary")
 
-        if not captcha_element or not submit_button:
-            # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Failed to analysis captcha / submit.")
-            console_log.error("Failed to analyze captcha / submit.")
+        if not captcha_input or not submit_button:
+            console_log.error("Fail to analyze captcha / submit.")
             return False
 
-        await send_key_to_element(driver, captcha_element, captcha_code)
+        await send_key_to_element(driver, captcha_input, captcha_code)
         await send_click_to_element(driver, submit_button)        
 
-        await asyncio.sleep(TIME_COUNTER)
+        await asyncio.sleep(TIME_COUNTER())
 
         if driver.current_url != URL:
-            # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Login successful.")
-            console_log.info("Login successful.")
+            console_log.info("Login success.")
             return True
         else:
-            # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Login failed")
-            console_log.warning("Login failed.")
+            console_log.warning("Login fail.")
             return False
 
     except Exception as e:
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Login attempt fail : {e}")
-        console_log.error(f"Login attempt failed : {e}")
+        console_log.error(f"Login attempt fail : {e}")
         return None
-
 
 async def login_page(driver: uc.Chrome) -> Optional[bool]:
 
@@ -354,7 +330,6 @@ async def login_page(driver: uc.Chrome) -> Optional[bool]:
         driver.get(URL)
 
         for _ in range(MAX_RETRY):
-            # print(f"Login attempt {_+1} / {MAX_RETRY}")
             console_log.info(f"Login attempt {_ + 1} / {MAX_RETRY}")
 
             success = await login_attempt(driver)
@@ -362,19 +337,39 @@ async def login_page(driver: uc.Chrome) -> Optional[bool]:
                 return True
 
             if _ < MAX_RETRY - 1 :
-                # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Login failed, retrying...")
-                console_log.warning("Login failed, retrying...")
-                await asyncio.sleep(TIME_COUNTER)
+                console_log.warning("Login fail, retrying...")
+                await asyncio.sleep(TIME_COUNTER())
 
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} All login attempts failed. Exiting program...")
-        console_log.error("All login attempts failed. Exiting program...")
+        console_log.error("All login attempts fail. Exiting program...")
         return False
 
     except Exception as e:
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Login page Fail : {e}")
-        console_log.error(f"Login page failed : {e}")
+        console_log.error(f"Login page fail : {e}")
         return None
 
+async def navigate_to_course(driver: uc.Chrome) -> None:
+    
+    try:
+        """
+            Executing it twice is to resolve the advertising pop-up when loggin success.
+        """
+        personal_info: Optional[WebElement] = analysis_element(driver, By.ID, "personalinfo")
+        await send_click_to_element(driver, personal_info)
+        await send_click_to_element(driver, personal_info)
+        await asyncio.sleep(TIME_COUNTER())
+
+        course: Optional[WebElement] = analysis_element(driver, By.ID, "class")
+        await send_click_to_element(driver, course)
+
+        new_semester: Optional[WebElement] = analysis_element(driver, By.ID, "c2")
+        await send_click_to_element(driver, personal_info)
+
+        console_log.info("Navigate to course success.")
+
+    except Exception as e:
+        console_log.error("Navigate to course fail.")
+
+    return None
 
 async def main() -> None:
 
@@ -385,25 +380,21 @@ async def main() -> None:
         driver: Optional[uc.Chrome] = setup_driver()
 
         if not driver:
-            # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Driver started fail. Exiting program...")
-            console_log.error("Driver start failed. Exiting program...")
+            console_log.error("Driver start fail. Exiting program...")
             return
-
-        start = dt.now()
+            
         await login_page(driver)
-        end = dt.now()
-        print(end - start)
-
+        await asyncio.sleep(TIME_COUNTER())
+        
+        await navigate_to_course(driver)
         await asyncio.sleep(5)
 
     except Exception as e:
-        # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Workflow Fail : {e}")
-        console_log.error(f"Workflow faile : {e}")
+        console_log.error(f"Workflow fail : {e}")
 
     finally:
         if driver is not None:
             driver.quit()
-            # print(f"{dt.now().strftime('%Y-%m-%d %H:%M:%S')} Driver quit.")
             console_log.info("Driver quit.")
 
 if __name__ == "__main__":

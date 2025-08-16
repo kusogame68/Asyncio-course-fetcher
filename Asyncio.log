@@ -1,16 +1,21 @@
-2025-08-15 21:24:17,145 - Console_log - INFO : Driver initialized successfully.
-2025-08-15 21:24:17,409 - Console_log - INFO : Login attempt 1 / 3
-2025-08-15 21:24:17,410 - Console_log - INFO : Starting concurrent operations...
-2025-08-15 21:24:17,410 - Console_log - INFO : Starting captcha processing...
-2025-08-15 21:24:17,428 - Console_log - INFO : Starting credential input...
-2025-08-15 21:24:18,682 - Console_log - INFO : Key sent successfully.
-2025-08-15 21:24:18,962 - Console_log - INFO : Key sent successfully.
-2025-08-15 21:24:18,963 - Console_log - INFO : Credential input completed.
-2025-08-15 21:24:21,573 - Console_log - DEBUG : OCR initialized successfully.
-2025-08-15 21:24:22,825 - Console_log - INFO : OCR captcha successfully recognized : 65472
-2025-08-15 21:24:22,834 - Console_log - INFO : Captcha processing completed.
-2025-08-15 21:24:22,835 - Console_log - INFO : Concurrent operations completed.
-2025-08-15 21:24:24,049 - Console_log - INFO : Key sent successfully.
-2025-08-15 21:24:25,182 - Console_log - INFO : Click sent successfully.
-2025-08-15 21:24:26,086 - Console_log - INFO : Login successful.
-2025-08-15 21:24:31,307 - Console_log - INFO : Driver quit.
+2025-08-16 14:58:24,549 - Console_log - INFO : Driver initialized success.
+2025-08-16 14:58:24,825 - Console_log - INFO : Login attempt 1 / 3
+2025-08-16 14:58:24,825 - Console_log - INFO : Starting concurrent operations...
+2025-08-16 14:58:24,826 - Console_log - INFO : Starting captcha processing...
+2025-08-16 14:58:24,844 - Console_log - INFO : Starting credential input...
+2025-08-16 14:58:25,754 - Console_log - INFO : Key sent success.
+2025-08-16 14:58:26,037 - Console_log - INFO : Key sent success.
+2025-08-16 14:58:26,037 - Console_log - INFO : Credential input completed.
+2025-08-16 14:58:31,354 - Console_log - INFO : OCR initialized success.
+2025-08-16 14:58:32,701 - Console_log - INFO : OCR captcha success recognized : 95415
+2025-08-16 14:58:32,702 - Console_log - INFO : Captcha processing completed.
+2025-08-16 14:58:32,702 - Console_log - INFO : Concurrent operations completed.
+2025-08-16 14:58:32,979 - Console_log - INFO : Key send success.
+2025-08-16 14:58:32,979 - Console_log - INFO : Click send success.
+2025-08-16 14:58:33,482 - Console_log - INFO : Login success.
+2025-08-16 14:58:34,093 - Console_log - INFO : Click send success.
+2025-08-16 14:58:34,093 - Console_log - INFO : Click send success.
+2025-08-16 14:58:34,093 - Console_log - INFO : Click send success.
+2025-08-16 14:58:34,106 - Console_log - INFO : Click send success.
+2025-08-16 14:58:35,047 - Console_log - INFO : Navigate to course success.
+2025-08-16 14:58:35,374 - Console_log - INFO : Driver quit.
