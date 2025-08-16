@@ -11,6 +11,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import NoAlertPresentException
 from fake_useragent import UserAgent
 from paddleocr import PaddleOCR
 from functools import partial
@@ -157,11 +158,11 @@ def ocr_img_sync(driver: uc.Chrome,
             return parser_content
         else:
             console_log.warning(f"OCR fail : {parser_content}")
-            return None
+            return
 
     except Exception as e:
         console_log.error(f"OCR_img fail : {e}")
-        return None
+        return
 
 async def ocr_img_async(driver: uc.Chrome, element: WebElement) -> Optional[str]:
 
@@ -182,7 +183,7 @@ async def ocr_img_async(driver: uc.Chrome, element: WebElement) -> Optional[str]
 
         except Exception as e:
             console_log.error(f"OCR async execution fail : {e}")
-            return None
+            return
 
 async def send_key_to_element(driver: uc.Chrome,
                               element: WebElement,
@@ -200,7 +201,7 @@ async def send_key_to_element(driver: uc.Chrome,
 
     except Exception as e:
         console_log.error(f"Send key fail : {e}")
-        return None
+        return
 
 async def send_click_to_element(driver: uc.Chrome,
                                 element: WebElement) -> Optional[bool]:
@@ -214,7 +215,7 @@ async def send_click_to_element(driver: uc.Chrome,
 
     except Exception as e:
         console_log.error(f"Click fail : {e}")
-        return None
+        return
 
 async def process_captcha(driver: uc.Chrome) -> Optional[str]:
 
@@ -224,7 +225,7 @@ async def process_captcha(driver: uc.Chrome) -> Optional[str]:
         vimg_element: Optional[WebElement] = analysis_element(driver, By.ID, "vimg")
 
         if not vimg_element:
-            return None
+            return
 
         """
             Use asynchronous process the OCR.
@@ -235,7 +236,7 @@ async def process_captcha(driver: uc.Chrome) -> Optional[str]:
 
     except Exception as e:
         console_log.error(f"Process captcha fail : {e}")
-        return None
+        return
 
 async def input_credentials(driver: uc.Chrome) -> tuple[bool, bool]:
 
@@ -269,6 +270,18 @@ async def input_credentials(driver: uc.Chrome) -> tuple[bool, bool]:
         console_log.error(f"Input credentials fail : {e}")
         return False, False
 
+def handle_alert(driver: uc.Chrome) -> Optional[bool]:
+
+    try:
+        alert: WebElement = driver.switch_to.alert
+        msg: str          = alert.text
+        console_log.warning(f"Alert detected : {msg}")
+        alert.accept()
+        return True
+
+    except NoAlertPresentException:
+        return
+
 async def login_attempt(driver: uc.Chrome) -> Optional[bool]:
 
     try:
@@ -283,12 +296,8 @@ async def login_attempt(driver: uc.Chrome) -> Optional[bool]:
 
         console_log.info("Concurrent operations completed.")
 
-        if not account_success:
-            console_log.warning("Fail to input account.")
-            return
-
-        if not password_success:
-            console_log.warning("Fail to input password.")
+        if not account_success or not password_success:
+            console_log.warning("Fail to input account and password.")
             return
 
         if not captcha_code:
@@ -297,7 +306,6 @@ async def login_attempt(driver: uc.Chrome) -> Optional[bool]:
             if vimg_element:
                 await send_click_to_element(driver, vimg_element)
                 console_log.warning("Fail process captcha.")
-                
                 await asyncio.sleep(TIME_COUNTER())
             return
 
@@ -305,24 +313,26 @@ async def login_attempt(driver: uc.Chrome) -> Optional[bool]:
         submit_button: Optional[WebElement] = analysis_element(driver, By.CLASS_NAME, "btn-primary")
 
         if not captcha_input or not submit_button:
-            console_log.error("Fail to analyze captcha / submit.")
-            return False
+            console_log.error("Fail to analyze input of captcha and submit.")
+            return
 
         await send_key_to_element(driver, captcha_input, captcha_code)
         await send_click_to_element(driver, submit_button)        
-
         await asyncio.sleep(TIME_COUNTER())
 
-        if driver.current_url != URL:
+        if handle_alert(driver):
+            return
+
+        if "news.asp" in driver.current_url:
             console_log.info("Login success.")
             return True
         else:
             console_log.warning("Login fail.")
-            return False
+            return
 
     except Exception as e:
         console_log.error(f"Login attempt fail : {e}")
-        return None
+        return
 
 async def login_page(driver: uc.Chrome) -> Optional[bool]:
 
@@ -332,20 +342,17 @@ async def login_page(driver: uc.Chrome) -> Optional[bool]:
         for _ in range(MAX_RETRY):
             console_log.info(f"Login attempt {_ + 1} / {MAX_RETRY}")
 
-            success = await login_attempt(driver)
-            if success:
+            if await login_attempt(driver):
                 return True
 
             if _ < MAX_RETRY - 1 :
                 console_log.warning("Login fail, retrying...")
                 await asyncio.sleep(TIME_COUNTER())
-
-        console_log.error("All login attempts fail. Exiting program...")
-        return False
+        return
 
     except Exception as e:
         console_log.error(f"Login page fail : {e}")
-        return None
+        return
 
 async def navigate_to_course(driver: uc.Chrome) -> None:
     
@@ -362,14 +369,14 @@ async def navigate_to_course(driver: uc.Chrome) -> None:
         await send_click_to_element(driver, course)
 
         new_semester: Optional[WebElement] = analysis_element(driver, By.ID, "c2")
-        await send_click_to_element(driver, personal_info)
+        await send_click_to_element(driver, new_semester)
 
         console_log.info("Navigate to course success.")
 
     except Exception as e:
-        console_log.error("Navigate to course fail.")
+        console_log.error(f"Navigate to course fail : {e}")
 
-    return None
+    return
 
 async def main() -> None:
 
@@ -386,6 +393,10 @@ async def main() -> None:
         await login_page(driver)
         await asyncio.sleep(TIME_COUNTER())
         
+        if "news.asp" not in driver.current_url:
+            console_log.error("All login attempts fail. Exiting program...")
+            return 
+
         await navigate_to_course(driver)
         await asyncio.sleep(5)
 
