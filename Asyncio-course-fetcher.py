@@ -15,15 +15,18 @@ from selenium.common.exceptions import NoAlertPresentException
 from fake_useragent import UserAgent
 from paddleocr import PaddleOCR
 from functools import partial
+from typing import Optional, Final, Tuple
 import concurrent.futures
 import random
 import yaml
+import re
 import asyncio
-from typing import Optional, Final
 import os
 import cv2
 import numpy as np
 import logging
+import sys
+import signal
 
 """  
     Avoiding repeat closure.
@@ -40,24 +43,59 @@ TIME_COUNTER: float = lambda: round(random.choice(range(2, 10)) * .1, 1)
 
 def setup_log() -> logging.Logger:
 
-    console_log: logging.Logger = logging.getLogger("Console_log")
-    console_log.setLevel(logging.DEBUG)
+    try:
+        console_log: logging.Logger = logging.getLogger("Console_log")
+        console_log.setLevel(logging.DEBUG)
 
-    formatter: logging.Formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s : %(message)s")
+        formatter: logging.Formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s : %(message)s")
 
-    dev_handler = logging.StreamHandler()
-    dev_handler.setLevel(logging.INFO)
-    dev_handler.setFormatter(formatter)
+        dev_handler = logging.StreamHandler()
+        dev_handler.setLevel(logging.INFO)
+        dev_handler.setFormatter(formatter)
 
-    file_handler = logging.FileHandler(LOG_FILENAME)
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(formatter)
+        file_handler = logging.FileHandler(LOG_FILENAME)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
 
-    if not console_log.handlers:
-        console_log.addHandler(dev_handler)
-        console_log.addHandler(file_handler)
+        if not console_log.handlers:
+            console_log.addHandler(dev_handler)
+            console_log.addHandler(file_handler)
 
-    return console_log
+        return console_log
+    
+    except Exception as e:
+        console_log.error(f"Setup log fail : {e}")
+        return
+
+def signal_handler(sig, frame) -> None:
+    
+    console_log.debug("Using \"ctrl + C\". Exiting program...")
+    sys.exit(0)
+
+def check_acc_pwd(account: str, password: str) -> Optional[Tuple[str, str]]: 
+
+    """
+        Using a regular expression to validate the ACCOUNT and PASSWORD.
+    """
+    try:
+        if not account or not password:
+            raise ValueError("Please input account and password in config.yaml.")
+
+        acc_match: re.Match = re.match(r"^[A-Za-z]\d{8}$", account)
+        pwd_match: re.Match = re.match(r"^.{6,10}$", password)
+
+        if not acc_match or not pwd_match:
+            raise TypeError("Please double confirm account and password correct or not.")
+
+        return account, password
+
+    except ValueError as ve:
+        console_log.error(f"{ve}")
+    except TypeError as te:
+        console_log.error(f"{te}")
+    except Exception as e:
+        console_log.error(f"Check acc and pwd fail : {e}")
+    return
 
 def setup_driver() -> Optional[uc.Chrome]:
 
@@ -71,8 +109,10 @@ def setup_driver() -> Optional[uc.Chrome]:
         with open("config.yaml", "r", encoding="utf-8-sig") as yaml_f:
             configs = yaml.safe_load(yaml_f)
 
-        ACCOUNT  = configs["login"]["account"]
-        PASSWORD = configs["login"]["password"]
+        ACCOUNT, PASSWORD = check_acc_pwd(
+            configs["login"]["account"],
+            configs["login"]["password"]
+            )
 
         for config in configs["driver"]:
             chrome_options.add_argument(config)
@@ -84,8 +124,8 @@ def setup_driver() -> Optional[uc.Chrome]:
         return driver
 
     except Exception as e:
-        console_log.error(f"Drive initialized fail : {e}")
-        return None
+        console_log.error(f"Driver initialized fail : {e}")
+        return
 
 def analysis_element(driver: uc.Chrome,
                            by: By,
@@ -384,6 +424,7 @@ async def main() -> None:
     driver: Optional[uc.Chrome] = None
 
     try:
+        signal.signal(signal.SIGINT, signal_handler)
         driver: Optional[uc.Chrome] = setup_driver()
 
         if not driver:
