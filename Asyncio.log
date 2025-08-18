@@ -1,36 +1,20 @@
-2025-08-17 17:01:09,350 - Console_log - ERROR : Please input account and password in config.yaml.
-2025-08-17 17:01:09,352 - Console_log - ERROR : Driver initialized fail : cannot unpack non-iterable NoneType object
-2025-08-17 17:01:09,352 - Console_log - ERROR : Driver start fail. Exiting program...
-2025-08-17 17:01:42,134 - Console_log - INFO : Driver initialized success.
-2025-08-17 17:01:42,389 - Console_log - INFO : Login attempt 1 / 3
-2025-08-17 17:01:42,389 - Console_log - INFO : Starting concurrent operations...
-2025-08-17 17:01:42,389 - Console_log - INFO : Starting captcha processing...
-2025-08-17 17:01:42,406 - Console_log - INFO : Starting credential input...
-2025-08-17 17:01:43,264 - Console_log - INFO : Key send success.
-2025-08-17 17:01:43,603 - Console_log - INFO : Key send success.
-2025-08-17 17:01:43,605 - Console_log - INFO : Credential input completed.
-2025-08-17 17:01:54,278 - Console_log - INFO : OCR initialized success.
-2025-08-17 17:01:55,486 - Console_log - INFO : OCR captcha success recognized : 99623
-2025-08-17 17:01:55,487 - Console_log - INFO : Captcha processing completed.
-2025-08-17 17:01:55,487 - Console_log - INFO : Concurrent operations completed.
-2025-08-17 17:01:56,057 - Console_log - INFO : Key send success.
-2025-08-17 17:01:56,335 - Console_log - INFO : Click send success.
-2025-08-17 17:01:57,215 - Console_log - INFO : Login success.
-2025-08-17 17:01:58,215 - Console_log - INFO : Click send success.
-2025-08-17 17:01:58,479 - Console_log - INFO : Click send success.
-2025-08-17 17:01:59,167 - Console_log - INFO : Click send success.
-2025-08-17 17:02:00,156 - Console_log - INFO : Click send success.
-2025-08-17 17:02:00,156 - Console_log - INFO : Navigate to course success.
-2025-08-17 17:02:05,353 - Console_log - INFO : Driver quit.
-2025-08-17 17:03:08,041 - Console_log - INFO : Driver initialized success.
-2025-08-17 17:03:08,324 - Console_log - INFO : Login attempt 1 / 3
-2025-08-17 17:03:08,324 - Console_log - INFO : Starting concurrent operations...
-2025-08-17 17:03:08,324 - Console_log - INFO : Starting captcha processing...
-2025-08-17 17:03:08,342 - Console_log - INFO : Starting credential input...
-2025-08-17 17:03:09,238 - Console_log - INFO : Key send success.
-2025-08-17 17:03:09,518 - Console_log - INFO : Key send success.
-2025-08-17 17:03:09,518 - Console_log - INFO : Credential input completed.
-2025-08-17 17:03:11,584 - Console_log - DEBUG : Using "ctrl + C". Exiting program...
-2025-08-17 17:03:12,730 - Console_log - INFO : OCR initialized success.
-2025-08-17 17:03:13,910 - Console_log - WARNING : OCR fail : 7512
-2025-08-17 17:03:14,080 - Console_log - INFO : Driver quit.
+2025-08-18 23:37:17,123 - Console_log - INFO : DRIVER initialized success.
+2025-08-18 23:37:18,809 - Console_log - INFO : Login attempt 1 / 3
+2025-08-18 23:37:18,810 - Console_log - INFO : Start to concurrent operations...
+2025-08-18 23:37:18,810 - Console_log - INFO : Start to captcha process...
+2025-08-18 23:37:18,835 - Console_log - INFO : Start to credential input...
+2025-08-18 23:37:19,426 - Console_log - INFO : Send key success.
+2025-08-18 23:37:19,708 - Console_log - INFO : Send key success.
+2025-08-18 23:37:19,709 - Console_log - INFO : Input credentials complete.
+2025-08-18 23:37:20,067 - Console_log - INFO : OCR captcha success recognized : 41693
+2025-08-18 23:37:20,069 - Console_log - INFO : Process captcha complete.
+2025-08-18 23:37:20,070 - Console_log - INFO : Concurrent operations complete.
+2025-08-18 23:37:20,809 - Console_log - INFO : Send key success.
+2025-08-18 23:37:21,077 - Console_log - INFO : Send click success.
+2025-08-18 23:37:21,816 - Console_log - INFO : Login success.
+2025-08-18 23:37:23,005 - Console_log - INFO : Send click success.
+2025-08-18 23:37:23,272 - Console_log - INFO : Send click success.
+2025-08-18 23:37:24,154 - Console_log - INFO : Send click success.
+2025-08-18 23:37:25,095 - Console_log - INFO : Send click success.
+2025-08-18 23:37:25,095 - Console_log - INFO : Navigate to course success.
+2025-08-18 23:37:30,307 - Console_log - INFO : DRIVER quit.
