@@ -17,7 +17,6 @@ from typing import Optional, Final, Tuple
 from paddleocr import PaddleOCR
 from functools import partial
 import concurrent.futures
-import random
 import yaml
 import re
 import asyncio
@@ -36,13 +35,13 @@ uc.Chrome.__del__ = lambda self: None
 DRIVER: Optional[uc.Chrome]    = None
 OCR_MODEL: Optional[PaddleOCR] = None
 CONSOLE_LOG : logging.Logger   = None
-URL: str = "https://sss.must.edu.tw/"
-IMG_PATH: str = os.path.join(".", "imgs")
-LOG_FILENAME: Final[str] = "Asyncio.log"
-ACCOUNT: Optional[str]   = None # Loaded from config.yaml
-PASSWORD: Optional[str]  = None # Loaded from config.yaml
-MAX_RETRY: int = 3
-TIME_COUNTER: float = lambda: round(random.choice(range(2, 10)) * .1, 1)
+ACCOUNT: Optional[str]         = None # Loaded from config.yaml
+PASSWORD: Optional[str]        = None # Loaded from config.yaml
+TIME_COUNTER: float            = lambda: np.random.uniform(0.2, 1.0)
+MAX_RETRY: int                 = 3
+URL: str                       = "https://sss.must.edu.tw/"
+IMG_PATH: str                  = os.path.join(".", "imgs")
+LOG_FILENAME: Final[str]       = "Asyncio.log"
 
 def setup_log() -> None:
 
