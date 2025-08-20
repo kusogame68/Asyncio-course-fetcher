@@ -9,6 +9,7 @@ driver:
   - --log-level=3
   - --disable-blink-features=AutomationControlled
 
-login:
-  account: #Input account
-  password: #Input password
+general:
+  url: https://sss.must.edu.tw/
+  max_retry: 3
+  img_path: ./imgs

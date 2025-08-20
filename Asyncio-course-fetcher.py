@@ -15,6 +15,7 @@ from selenium.common.exceptions import NoAlertPresentException
 from fake_useragent import UserAgent
 from typing import Optional, Final, Tuple
 from paddleocr import PaddleOCR
+from dotenv import load_dotenv
 from functools import partial
 import concurrent.futures
 import yaml
@@ -32,16 +33,16 @@ import signal
 """
 uc.Chrome.__del__ = lambda self: None
 
-DRIVER: Optional[uc.Chrome]    = None
-OCR_MODEL: Optional[PaddleOCR] = None
-CONSOLE_LOG : logging.Logger   = None
-ACCOUNT: Optional[str]         = None # Loaded from config.yaml
-PASSWORD: Optional[str]        = None # Loaded from config.yaml
-TIME_COUNTER: float            = lambda: np.random.uniform(0.2, 1.0)
-MAX_RETRY: int                 = 3
-URL: str                       = "https://sss.must.edu.tw/"
-IMG_PATH: str                  = os.path.join(".", "imgs")
+ACCOUNT: Optional[str]         = None # Loaded from .env
+PASSWORD: Optional[str]        = None # Loaded from .env
+DRIVER: Optional[uc.Chrome]    = None # Loaded from config.yaml
+OCR_MODEL: Optional[PaddleOCR] = None #         |
+CONSOLE_LOG : logging.Logger   = None #         |
+MAX_RETRY: int                 = None #         |
+URL: str                       = None #         |
+IMG_PATH: str                  = None # Loaded from config.yaml
 LOG_FILENAME: Final[str]       = "Asyncio.log"
+TIME_COUNTER: float            = lambda: np.random.uniform(0.2, 1.0)
 
 def setup_log() -> None:
 
@@ -67,10 +68,32 @@ def setup_log() -> None:
     
     except Exception as e:
         CONSOLE_LOG.error(f"Setup log fail : {e}")
-        return
+    return
+
+def setup_env() -> None:
+
+    global ACCOUNT, PASSWORD, URL, MAX_RETRY, IMG_PATH
+
+    try:
+        load_dotenv()
+        ACCOUNT, PASSWORD = check_acc_pwd(
+            os.getenv("ACCOUNT"),
+            os.getenv("PASSWORD")
+            )
+
+        with open("config.yaml", "r", encoding="utf-8-sig") as yaml_f:
+            configs = yaml.safe_load(yaml_f)
+
+            MAX_RETRY = configs["general"]["max_retry"]
+            URL       = configs["general"]["url"]
+            IMG_PATH  = configs["general"]["img_path"]
+
+    except Exception as e:
+        CONSOLE_LOG.error(f"Setup env fail : {e}")
+    return
 
 def signal_handler(sig, frame) -> None:
-    
+
     CONSOLE_LOG.debug("Using \"ctrl + C\". Exiting program...")
     sys.exit(0)
 
@@ -83,7 +106,7 @@ def setup_ocr() -> None:
     
     except Exception as e:
         CONSOLE_LOG.error(f"Setup ocr fail : {e}")
-        return
+    return
 
 def check_acc_pwd(account: str, password: str) -> Optional[Tuple[str, str]]: 
 
@@ -110,9 +133,9 @@ def check_acc_pwd(account: str, password: str) -> Optional[Tuple[str, str]]:
         CONSOLE_LOG.error(f"Check acc and pwd fail : {e}")
     return
 
-def setup_driver() -> Optional[uc.Chrome]:
+def setup_driver() -> None:
 
-    global ACCOUNT, PASSWORD, DRIVER
+    global DRIVER
 
     try:
         user_agent     = UserAgent().random
@@ -122,13 +145,8 @@ def setup_driver() -> Optional[uc.Chrome]:
         with open("config.yaml", "r", encoding="utf-8-sig") as yaml_f:
             configs = yaml.safe_load(yaml_f)
 
-        ACCOUNT, PASSWORD = check_acc_pwd(
-            configs["login"]["account"],
-            configs["login"]["password"]
-            )
-
-        for config in configs["driver"]:
-            chrome_options.add_argument(config)
+            for config in configs["driver"]:
+                chrome_options.add_argument(config)
 
         DRIVER = uc.Chrome(options = chrome_options)
 
@@ -137,7 +155,7 @@ def setup_driver() -> Optional[uc.Chrome]:
 
     except Exception as e:
         CONSOLE_LOG.error(f"DRIVER initialized fail : {e}")
-        return
+    return
 
 def analysis_element(by: By, value: str) -> Optional[WebElement]:
 
@@ -149,13 +167,13 @@ def analysis_element(by: By, value: str) -> Optional[WebElement]:
 
     except Exception as e:
         CONSOLE_LOG.error(f"Analysis element fail : {e}")
-        return
+    return
 
 def ocr_img_sync(element: WebElement) -> Optional[str]:
 
-    captcha_path: str   = f"{IMG_PATH}/captcha.png"
-    denoising_path: str = f"{IMG_PATH}/denoising.png"
-    dilate_path: str    = f"{IMG_PATH}/dilate.png"
+    captcha_path: str   = os.path.join(IMG_PATH, "captcha.png")
+    denoising_path: str = os.path.join(IMG_PATH, "denoising.png")
+    dilate_path: str    = os.path.join(IMG_PATH, "dilate.png")
 
     try:
         """
@@ -204,11 +222,10 @@ def ocr_img_sync(element: WebElement) -> Optional[str]:
             return parser_content
         else:
             CONSOLE_LOG.warning(f"OCR fail : {parser_content}")
-            return
 
     except Exception as e:
         CONSOLE_LOG.error(f"OCR img fail : {e}")
-        return
+    return
 
 async def ocr_img_async(element: WebElement) -> Optional[str]:
 
@@ -229,7 +246,7 @@ async def ocr_img_async(element: WebElement) -> Optional[str]:
 
         except Exception as e:
             CONSOLE_LOG.error(f"OCR async execution fail : {e}")
-            return
+    return
 
 async def send_key_to_element(element: WebElement, content: str) -> Optional[bool]:
 
@@ -245,7 +262,7 @@ async def send_key_to_element(element: WebElement, content: str) -> Optional[boo
 
     except Exception as e:
         CONSOLE_LOG.error(f"Send key fail : {e}")
-        return
+    return
 
 async def send_click_to_element(element: WebElement) -> Optional[bool]:
 
@@ -258,7 +275,7 @@ async def send_click_to_element(element: WebElement) -> Optional[bool]:
 
     except Exception as e:
         CONSOLE_LOG.error(f"Send click fail : {e}")
-        return
+    return
 
 async def process_captcha() -> Optional[str]:
 
@@ -279,7 +296,7 @@ async def process_captcha() -> Optional[str]:
 
     except Exception as e:
         CONSOLE_LOG.error(f"Process captcha fail : {e}")
-        return
+    return
 
 async def input_credentials() -> tuple[bool, bool]:
 
@@ -311,7 +328,7 @@ async def input_credentials() -> tuple[bool, bool]:
 
     except Exception as e:
         CONSOLE_LOG.error(f"Input credentials fail : {e}")
-        return False, False
+    return False, False
 
 def alert_handler() -> Optional[bool]:
 
@@ -395,7 +412,7 @@ async def login_page() -> Optional[bool]:
 
     except Exception as e:
         CONSOLE_LOG.error(f"Login page fail : {e}")
-        return
+    return
 
 async def navigate_to_course() -> None:
 
@@ -418,12 +435,11 @@ async def navigate_to_course() -> None:
 
     except Exception as e:
         CONSOLE_LOG.error(f"Navigate to course fail : {e}")
-
     return
 
 async def main() -> None:
 
-    global DRIVER, OCR_MODEL, CONSOLE_LOG
+    global ACCOUNT, PASSWORD, DRIVER, OCR_MODEL, CONSOLE_LOG
 
     os.makedirs("imgs", exist_ok = True)
 
@@ -433,9 +449,14 @@ async def main() -> None:
         loop = asyncio.get_event_loop()
         with concurrent.futures.ThreadPoolExecutor() as executor:
             await asyncio.gather(
+                loop.run_in_executor(executor, setup_env),
                 loop.run_in_executor(executor, setup_driver),
                 loop.run_in_executor(executor, setup_ocr)
             )
+
+        if not all((ACCOUNT, PASSWORD, MAX_RETRY, URL, IMG_PATH)):
+            CONSOLE_LOG.error("Please confirm the correctness of the information in .env or config.yaml. Exiting program...")
+            return
 
         if not all((DRIVER, OCR_MODEL)):
             CONSOLE_LOG.error("DRIVER or OCR_MODEL init fail. Exiting program...")
@@ -459,9 +480,11 @@ async def main() -> None:
             DRIVER.quit()
             CONSOLE_LOG.info("DRIVER quit.")
 
-        DRIVER      = None
-        OCR_MODEL   = None
-        CONSOLE_LOG = None
+        ACCOUNT      = None
+        PASSWORD     = None
+        DRIVER       = None
+        OCR_MODEL    = None
+        CONSOLE_LOG  = None
 
 if __name__ == "__main__":
     setup_log()
