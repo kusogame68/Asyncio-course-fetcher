@@ -7,23 +7,25 @@ Created on Tue Aug 12 23:55:11 2025
 
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoAlertPresentException
 from fake_useragent import UserAgent
-from typing import Optional, Final, Tuple
+from typing import Optional, Final, Tuple, Awaitable, List, Dict, Iterable
 from paddleocr import PaddleOCR
 from dotenv import load_dotenv
 from functools import partial
+import pandas as pd
+import numpy as np
 import concurrent.futures
+import time
 import yaml
 import re
 import asyncio
 import os
 import cv2
-import numpy as np
 import logging
 import sys
 import signal
@@ -43,12 +45,22 @@ URL: str                       = None #         |
 IMG_PATH: str                  = None # Loaded from config.yaml
 LOG_FILENAME: Final[str]       = "Asyncio.log"
 TIME_COUNTER: float            = lambda: np.random.uniform(0.2, 1.0)
+THREAD_POOL                    = concurrent.futures.ThreadPoolExecutor(max_workers = 4)
 
 def setup_log() -> None:
 
     global CONSOLE_LOG
 
     try:
+        """
+            The urllib3 connection pool often generates numerous WARNING messages under high concurrency, such as:
+            [ WARNING] connectionpool - Connection pool is full, discarding connection: localhost. Connection pool size: 1.
+            These messages typically do not affect functionality (as connections are automatically discarded or recreated),
+            but they can clutter the log, so the log level is downgraded to ERROR here.
+            This ensures that only truly critical exceptions are logged.
+        """
+        logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
+
         CONSOLE_LOG = logging.getLogger("Console_log")
         CONSOLE_LOG.setLevel(logging.DEBUG)
 
@@ -68,29 +80,6 @@ def setup_log() -> None:
     
     except Exception as e:
         CONSOLE_LOG.error(f"Setup log fail : {e}")
-    return
-
-def setup_env() -> None:
-
-    global ACCOUNT, PASSWORD, URL, MAX_RETRY, IMG_PATH
-
-    try:
-        load_dotenv()
-        ACCOUNT, PASSWORD = check_acc_pwd(
-            os.getenv("ACCOUNT"),
-            os.getenv("PASSWORD")
-            )
-
-        with open("config.yaml", "r", encoding="utf-8-sig") as yaml_f:
-            configs = yaml.safe_load(yaml_f)
-
-            MAX_RETRY = configs["general"]["max_retry"]
-            URL       = configs["general"]["url"]
-            IMG_PATH  = configs["general"]["img_path"]
-
-    except Exception as e:
-        CONSOLE_LOG.error(f"Setup env fail : {e}")
-    return
 
 def signal_handler(sig, frame) -> None:
 
@@ -106,7 +95,6 @@ def setup_ocr() -> None:
     
     except Exception as e:
         CONSOLE_LOG.error(f"Setup ocr fail : {e}")
-    return
 
 def check_acc_pwd(account: str, password: str) -> Optional[Tuple[str, str]]: 
 
@@ -131,7 +119,27 @@ def check_acc_pwd(account: str, password: str) -> Optional[Tuple[str, str]]:
         CONSOLE_LOG.error(f"{te}")
     except Exception as e:
         CONSOLE_LOG.error(f"Check acc and pwd fail : {e}")
-    return
+
+def setup_env() -> None:
+
+    global ACCOUNT, PASSWORD, URL, MAX_RETRY, IMG_PATH
+
+    try:
+        load_dotenv()
+        ACCOUNT, PASSWORD = check_acc_pwd(
+            os.getenv("ACCOUNT"),
+            os.getenv("PASSWORD")
+        )
+
+        with open("config.yaml", "r", encoding="utf-8-sig") as yaml_f:
+            configs = yaml.safe_load(yaml_f)
+
+            MAX_RETRY = configs["general"]["max_retry"]
+            URL       = configs["general"]["url"]
+            IMG_PATH  = configs["general"]["img_path"]
+
+    except Exception as e:
+        CONSOLE_LOG.error(f"Setup env fail : {e}")
 
 def setup_driver() -> None:
 
@@ -155,19 +163,19 @@ def setup_driver() -> None:
 
     except Exception as e:
         CONSOLE_LOG.error(f"DRIVER initialized fail : {e}")
-    return
 
-def analysis_element(by: By, value: str) -> Optional[WebElement]:
+def analysis_element(by: By, value: str, mode: str = "clickable") -> Optional[WebElement]:
 
     try:
-        get_element: WebElement = WebDriverWait(DRIVER, 10).until(
-            EC.element_to_be_clickable((by, value))
-        )
-        return get_element
+        if mode == "clickable":
+            return WebDriverWait(DRIVER, 10).until(EC.element_to_be_clickable((by, value)))
+
+        elif mode == "presence":
+            element: List[WebElement] = DRIVER.find_elements(by, value)
+            return element[0] if element else None
 
     except Exception as e:
         CONSOLE_LOG.error(f"Analysis element fail : {e}")
-    return
 
 def ocr_img_sync(element: WebElement) -> Optional[str]:
 
@@ -209,7 +217,7 @@ def ocr_img_sync(element: WebElement) -> Optional[str]:
         dilated_img             = cv2.bitwise_not(dilated_img)
         cv2.imwrite(dilate_path, dilated_img)
 
-        resaults: list = OCR_MODEL.predict(dilate_path)
+        resaults: List[Dict] = OCR_MODEL.predict(dilate_path)
 
         """
             Analyze results data.
@@ -225,7 +233,6 @@ def ocr_img_sync(element: WebElement) -> Optional[str]:
 
     except Exception as e:
         CONSOLE_LOG.error(f"OCR img fail : {e}")
-    return
 
 async def ocr_img_async(element: WebElement) -> Optional[str]:
 
@@ -233,20 +240,15 @@ async def ocr_img_async(element: WebElement) -> Optional[str]:
         Runs a synchronous OCR task in a background thread to avoid blocking the event loop.
     """
     loop = asyncio.get_event_loop()
+    try:
+        result: Optional[str] = await loop.run_in_executor(
+            THREAD_POOL, 
+            partial(ocr_img_sync, element)
+        )
+        return result
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-
-        try:
-            result: Optional[str] = await loop.run_in_executor(
-                executor, 
-                partial(ocr_img_sync, element)
-            )
-
-            return result
-
-        except Exception as e:
-            CONSOLE_LOG.error(f"OCR async execution fail : {e}")
-    return
+    except Exception as e:
+        CONSOLE_LOG.error(f"OCR async execution fail : {e}")
 
 async def send_key_to_element(element: WebElement, content: str) -> Optional[bool]:
 
@@ -262,9 +264,8 @@ async def send_key_to_element(element: WebElement, content: str) -> Optional[boo
 
     except Exception as e:
         CONSOLE_LOG.error(f"Send key fail : {e}")
-    return
 
-async def send_click_to_element(element: WebElement) -> Optional[bool]:
+def send_click_to_element(element: WebElement) -> Optional[bool]:
 
     try:
         actions: ActionChains = ActionChains(DRIVER)
@@ -275,7 +276,6 @@ async def send_click_to_element(element: WebElement) -> Optional[bool]:
 
     except Exception as e:
         CONSOLE_LOG.error(f"Send click fail : {e}")
-    return
 
 async def process_captcha() -> Optional[str]:
 
@@ -296,25 +296,27 @@ async def process_captcha() -> Optional[str]:
 
     except Exception as e:
         CONSOLE_LOG.error(f"Process captcha fail : {e}")
-    return
 
 async def input_credentials() -> tuple[bool, bool]:
 
     CONSOLE_LOG.info("Start to credential input...")
 
     try:
-
         stdno_element: Optional[WebElement]  = analysis_element(By.NAME, "STDNO")
         passwd_element: Optional[WebElement] = analysis_element(By.NAME, "PASSWD")
 
         if not all((stdno_element, passwd_element)):
             return False, False
 
-        account_task: Optional[bool]  = send_key_to_element(stdno_element, ACCOUNT)
-        password_task: Optional[bool] = send_key_to_element(passwd_element, PASSWORD)
+        """
+            Package the account input operation into an awaitable task.
+            The concurrent approach here mirrors the one in login_attempt().
+        """
+        account_task: Awaitable[Optional[bool]]  = send_key_to_element(stdno_element, ACCOUNT)
+        password_task: Awaitable[Optional[bool]] = send_key_to_element(passwd_element, PASSWORD)
 
         """
-            Concurrent process of account and password.
+            Run concurrent process of account and password.
         """
         account_result, password_result = await asyncio.gather(
             account_task, password_task, return_exceptions = True
@@ -340,15 +342,15 @@ def alert_handler() -> Optional[bool]:
         return True
 
     except NoAlertPresentException:
-        return
+        pass
 
 async def login_attempt() -> Optional[bool]:
 
     try:
         CONSOLE_LOG.info("Start to concurrent operations...")
 
-        account_passwork_input: tuple[bool, bool] = input_credentials()
-        capcha_input: Optional[str]               = process_captcha()
+        account_passwork_input: Awaitable[Optional[bool]] = input_credentials()
+        capcha_input: Awaitable[Optional[bool]]           = process_captcha()
 
         captcha_code, (account_success, password_success) = await asyncio.gather(
             capcha_input, account_passwork_input
@@ -364,7 +366,7 @@ async def login_attempt() -> Optional[bool]:
             vimg_element: Optional[WebElement] = analysis_element(By.ID, "vimg")
 
             if vimg_element:
-                await send_click_to_element(vimg_element)
+                send_click_to_element(vimg_element)
                 CONSOLE_LOG.warning("Fail to process captcha.")
                 await asyncio.sleep(TIME_COUNTER())
             return
@@ -377,7 +379,7 @@ async def login_attempt() -> Optional[bool]:
             return
 
         await send_key_to_element(captcha_input, captcha_code)
-        await send_click_to_element(submit_button)        
+        send_click_to_element(submit_button)
         await asyncio.sleep(TIME_COUNTER())
 
         if alert_handler():
@@ -388,11 +390,9 @@ async def login_attempt() -> Optional[bool]:
             return True
         else:
             CONSOLE_LOG.warning("Login fail.")
-            return
 
     except Exception as e:
         CONSOLE_LOG.error(f"Login attempt fail : {e}")
-        return
 
 async def login_page() -> Optional[bool]:
 
@@ -408,34 +408,141 @@ async def login_page() -> Optional[bool]:
             if _ < MAX_RETRY - 1 :
                 CONSOLE_LOG.warning("Login fail, retrying...")
                 await asyncio.sleep(TIME_COUNTER())
-        return
 
     except Exception as e:
         CONSOLE_LOG.error(f"Login page fail : {e}")
-    return
 
-async def navigate_to_course() -> None:
+def navigate_to_course() -> None:
 
     try:
         """
             Executing it twice is to resolve the advertising pop-up when loggin success.
         """
         personal_info: Optional[WebElement] = analysis_element(By.ID, "personalinfo")
-        await send_click_to_element(personal_info)
-        await send_click_to_element(personal_info)
-        await asyncio.sleep(TIME_COUNTER())
+        send_click_to_element(personal_info)
+        send_click_to_element(personal_info)
+        time.sleep(TIME_COUNTER())
 
         course: Optional[WebElement] = analysis_element(By.ID, "class")
-        await send_click_to_element(course)
+        send_click_to_element(course)
 
         new_semester: Optional[WebElement] = analysis_element(By.ID, "c2")
-        await send_click_to_element(new_semester)
+        send_click_to_element(new_semester)
 
         CONSOLE_LOG.info("Navigate to course success.")
 
     except Exception as e:
         CONSOLE_LOG.error(f"Navigate to course fail : {e}")
-    return
+
+def parse_row(html_str: str) -> list[str]:
+
+    try:
+        html: str          = html_str.replace("\u3000", "空堂<br>" * 4).replace("</td><td>", "<br>")
+        html: str          = re.sub(r"<(?!br).*?>", "", html)
+        parts: List[str]   = html.split("<br>")[:-10]
+
+        time_range:str     = f"{parts[1]}-{parts[2]}"
+        courses: List[str] = []
+        for _ in range(3, len(parts), 5):
+            course_name = "空堂 - Free Period" if "空堂" in parts[_] else f"{parts[_]} - {parts[_+1]}"
+            courses.append(course_name)
+
+        return [time_range, *courses]
+
+    except Exception as e:
+        CONSOLE_LOG.error(f"Paser row fail : {e}")
+
+def storedb_and_xlsx(year_text: str, semester_text: str) -> None:
+
+    try:
+        excel_path: str                = os.path.join(".", f"schedule.xlsx")
+
+        time_headers: List[WebElement] = DRIVER.find_elements(By.CSS_SELECTOR, "table.table-bordered > thead > tr > th")
+        time_data: Tuple[str]          = ("", *(header.text for header in time_headers[1:6]))
+
+        rows: List[WebElement]         = DRIVER.find_elements(By.CSS_SELECTOR, 'table.table-bordered > tbody > tr')[11:15]
+        rows_html: Tuple[str]          = (row.get_attribute('outerHTML') for row in rows)
+
+        courses_info: List[List[str]]  = [parse_row(html) for html in rows_html]
+
+        df = pd.DataFrame(courses_info, columns=time_data)
+
+        if not os.path.exists(excel_path):
+            mode         = "w"
+            sheet_exists = None
+        else:
+            mode         = "a"
+            sheet_exists = "replace"
+
+        with pd.ExcelWriter(excel_path, mode=mode, engine="openpyxl", if_sheet_exists = sheet_exists) as writer:
+            df.to_excel(writer, sheet_name = f"{year_text}-{semester_text}", index = False)
+
+    except Exception as e:
+        CONSOLE_LOG.error(f"Store DB and xlsx {year_text}-{semester_text} timetable fail: {e}")
+
+def check_no_data_error() -> bool:
+
+    return analysis_element(By.CLASS_NAME, "error-container", "presence") is not None
+
+def timetable_pic(year: str, semester: str) -> None:
+
+    schedule_info: str = os.path.join(IMG_PATH, f"schedule_info_{year}-{semester}.png")
+
+    try:
+        """
+            Using screenshot take timetable of mine.
+        """
+        bottom: WebElement       = analysis_element(By.CLASS_NAME, "bolder", "presence")
+        table_border: WebElement = analysis_element(By.CLASS_NAME, "table-bordered", "presence")
+
+        DRIVER.execute_script("arguments[0].scrollIntoView();", bottom)
+        table_border.screenshot(schedule_info)
+        CONSOLE_LOG.info(f"Take a picture of {year}-{semester} timetable to success")
+
+    except Exception as e:
+        CONSOLE_LOG.error(f"Take a picture of {year}-{semester} timetable fail : {e}")
+
+def paser_schedule() -> None:
+
+    try:
+        """
+            Core design consideration :
+
+            Why fetch the same element (CosYear, CosSmtr) outside and inside the loop?
+
+            - After dropdown changes, old element references may become stale in Selenium.
+            - Re-fetching inside loop ensures we always interact with a fresh element.
+            - The outer fetch is for initialization (count options),
+                while the inner fetch keeps interactions stable.
+        """
+        year_select: Optional[Select] = Select(analysis_element(By.NAME, "CosYear"))
+
+        for i in range( len(year_select.options) ):
+            year_select: Optional[Select] = Select(analysis_element(By.NAME, "CosYear"))
+            year_select.select_by_index(i)
+
+            current_year_text: str        = year_select.first_selected_option.text
+
+            for j in range(2):
+                semester_select: Optional[Select] = Select(analysis_element(By.NAME, "CosSmtr"))
+                semester_select.select_by_index(j)
+
+                current_semester_text: str        = semester_select.first_selected_option.text
+                time.sleep(TIME_COUNTER())
+
+                button: Optional[WebElement]      = analysis_element(By.CLASS_NAME, "btn-info")
+                send_click_to_element(button)
+                time.sleep(TIME_COUNTER())
+
+                if check_no_data_error():
+                    CONSOLE_LOG.info(f"There is no schedule : {current_year_text} - {current_semester_text}")
+                    continue
+
+                storedb_and_xlsx(current_year_text, current_semester_text)
+                timetable_pic(current_year_text, current_semester_text)
+
+    except Exception as e:
+        CONSOLE_LOG.error(f"Paser schedule fail : {e}")
 
 async def main() -> None:
 
@@ -446,13 +553,16 @@ async def main() -> None:
     try:
         signal.signal(signal.SIGINT, signal_handler)
 
+        """
+            Initialize the setup.
+        """
         loop = asyncio.get_event_loop()
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            await asyncio.gather(
-                loop.run_in_executor(executor, setup_env),
-                loop.run_in_executor(executor, setup_driver),
-                loop.run_in_executor(executor, setup_ocr)
-            )
+        tasks: Iterable[Awaitable[None]] = (
+            loop.run_in_executor(THREAD_POOL, setup_env),
+            loop.run_in_executor(THREAD_POOL, setup_driver),
+            loop.run_in_executor(THREAD_POOL, setup_ocr),
+        )
+        await asyncio.gather(*tasks)
 
         if not all((ACCOUNT, PASSWORD, MAX_RETRY, URL, IMG_PATH)):
             CONSOLE_LOG.error("Please confirm the correctness of the information in .env or config.yaml. Exiting program...")
@@ -469,8 +579,11 @@ async def main() -> None:
             CONSOLE_LOG.error("All login attempts fail. Exiting program...")
             return 
 
-        await navigate_to_course()
-        await asyncio.sleep(5)
+        navigate_to_course()
+        await asyncio.sleep(TIME_COUNTER())
+
+        paser_schedule()
+        await asyncio.sleep(1)
 
     except Exception as e:
         CONSOLE_LOG.error(f"Workflow fail : {e}")
@@ -487,5 +600,6 @@ async def main() -> None:
         CONSOLE_LOG  = None
 
 if __name__ == "__main__":
+    
     setup_log()
     asyncio.run(main())
