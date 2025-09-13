@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Aug 12 23:55:11 2025
+    Created on Tue Aug 12 23:55:11 2025
 
-@author: Johnson
+    @author: Johnson
 """
 
-import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
@@ -17,8 +16,10 @@ from typing import Optional, Final, Tuple, Awaitable, List, Dict, Iterable
 from paddleocr import PaddleOCR
 from dotenv import load_dotenv
 from functools import partial
+import undetected_chromedriver as uc
 import pandas as pd
 import numpy as np
+import plotly.express as px
 import concurrent.futures
 import time
 import yaml
@@ -29,6 +30,9 @@ import cv2
 import logging
 import sys
 import signal
+
+from sqltools import MyPsql
+from notifiers import short_msg, send_mail, send_line
 
 """  
     Avoiding repeat closure.
@@ -43,6 +47,7 @@ CONSOLE_LOG : logging.Logger   = None #         |
 MAX_RETRY: int                 = None #         |
 URL: str                       = None #         |
 IMG_PATH: str                  = None # Loaded from config.yaml
+PSQL: Optional[MyPsql]         = None
 LOG_FILENAME: Final[str]       = "Asyncio.log"
 TIME_COUNTER: float            = lambda: np.random.uniform(0.2, 1.0)
 THREAD_POOL                    = concurrent.futures.ThreadPoolExecutor(max_workers = 4)
@@ -77,7 +82,8 @@ def setup_log() -> None:
         if not CONSOLE_LOG.handlers:
             CONSOLE_LOG.addHandler(dev_handler)
             CONSOLE_LOG.addHandler(file_handler)
-    
+        CONSOLE_LOG.info("LOG initialized success.")
+
     except Exception as e:
         CONSOLE_LOG.error(f"Setup log fail : {e}")
 
@@ -92,6 +98,7 @@ def setup_ocr() -> None:
 
     try:
         OCR_MODEL = PaddleOCR(use_textline_orientation = True, lang = "en")
+        CONSOLE_LOG.info("OCR MODEL initialized success.")
     
     except Exception as e:
         CONSOLE_LOG.error(f"Setup ocr fail : {e}")
@@ -103,20 +110,19 @@ def check_acc_pwd(account: str, password: str) -> Optional[Tuple[str, str]]:
     """
     try:
         if not all((account, password)):
-            raise ValueError("Please input account and password in config.yaml.")
+            raise ValueError("Please input account and password in \".env\".")
 
         acc_match: re.Match = re.match(r"^[A-Za-z]\d{8}$", account)
         pwd_match: re.Match = re.match(r"^.{6,10}$", password)
 
         if not all((acc_match, pwd_match)):
             raise TypeError("Please double confirm account and password correct or not.")
-
         return account, password
 
     except ValueError as ve:
-        CONSOLE_LOG.error(f"{ve}")
+        CONSOLE_LOG.error(ve)
     except TypeError as te:
-        CONSOLE_LOG.error(f"{te}")
+        CONSOLE_LOG.error(te)
     except Exception as e:
         CONSOLE_LOG.error(f"Check acc and pwd fail : {e}")
 
@@ -137,6 +143,7 @@ def setup_env() -> None:
             MAX_RETRY = configs["general"]["max_retry"]
             URL       = configs["general"]["url"]
             IMG_PATH  = configs["general"]["img_path"]
+        CONSOLE_LOG.info("Environment Variables initialized success.")
 
     except Exception as e:
         CONSOLE_LOG.error(f"Setup env fail : {e}")
@@ -157,7 +164,6 @@ def setup_driver() -> None:
                 chrome_options.add_argument(config)
 
         DRIVER = uc.Chrome(options = chrome_options)
-
         DRIVER.set_page_load_timeout(30)
         CONSOLE_LOG.info("DRIVER initialized success.")
 
@@ -167,13 +173,19 @@ def setup_driver() -> None:
 def analysis_element(by: By, value: str, mode: str = "clickable") -> Optional[WebElement]:
 
     try:
-        if mode == "clickable":
-            return WebDriverWait(DRIVER, 10).until(EC.element_to_be_clickable((by, value)))
+        match mode:
+            case "clickable":
+                return WebDriverWait(DRIVER, 10).until(EC.element_to_be_clickable((by, value)))
 
-        elif mode == "presence":
-            element: List[WebElement] = DRIVER.find_elements(by, value)
-            return element[0] if element else None
+            case "presence":
+                elements: List[WebElement] = DRIVER.find_elements(by, value)
+                return elements[0] if elements else None
 
+            case _:
+                raise ValueError(f"Analysis element func unsupported mode: {mode}")
+
+    except ValueError as ve:
+        CONSOLE_LOG.error(ve)
     except Exception as e:
         CONSOLE_LOG.error(f"Analysis element fail : {e}")
 
@@ -204,7 +216,11 @@ def ocr_img_sync(element: WebElement) -> Optional[str]:
                 - Numbers 3 and 4 are prone to failure due to their severe curvature.
 
             Note:
-                - Testing on different computers shows that recognition performance can still vary, even with identical CPUs and GPUs.
+                - Testing on different computers shows that recognition performance can still vary,
+                  even with identical CPUs and GPUs.
+                - Running without browser headless mode is recommended, 
+                  as headless rendering can affect image resolution and 
+                  make it very difficult for PaddleOCR to recognize text.
 
             There is no one-size-fits-all solution.
             Try incrementing or decrementing the value by 1~2.
@@ -239,8 +255,8 @@ async def ocr_img_async(element: WebElement) -> Optional[str]:
     """
         Runs a synchronous OCR task in a background thread to avoid blocking the event loop.
     """
-    loop = asyncio.get_event_loop()
     try:
+        loop = asyncio.get_event_loop()
         result: Optional[str] = await loop.run_in_executor(
             THREAD_POOL, 
             partial(ocr_img_sync, element)
@@ -359,7 +375,7 @@ async def login_attempt() -> Optional[bool]:
         CONSOLE_LOG.info("Concurrent operations complete.")
 
         if not all((account_success, password_success)):
-            CONSOLE_LOG.warning("Fail to input account and password.")
+            CONSOLE_LOG.warning("Input account and password fail.")
             return
 
         if not captcha_code:
@@ -367,7 +383,7 @@ async def login_attempt() -> Optional[bool]:
 
             if vimg_element:
                 send_click_to_element(vimg_element)
-                CONSOLE_LOG.warning("Fail to process captcha.")
+                CONSOLE_LOG.warning("Process captcha fail.")
                 await asyncio.sleep(TIME_COUNTER())
             return
 
@@ -375,7 +391,7 @@ async def login_attempt() -> Optional[bool]:
         submit_button: Optional[WebElement] = analysis_element(By.CLASS_NAME, "btn-primary")
 
         if not all((captcha_input, submit_button)):
-            CONSOLE_LOG.error("Fail to analyze input of captcha and submit.")
+            CONSOLE_LOG.error("Analyze input of captcha and submit fail.")
             return
 
         await send_key_to_element(captcha_input, captcha_code)
@@ -434,6 +450,10 @@ def navigate_to_course() -> None:
     except Exception as e:
         CONSOLE_LOG.error(f"Navigate to course fail : {e}")
 
+def check_no_data_error() -> bool:
+
+    return analysis_element(By.CLASS_NAME, "error-container", "presence") is not None
+
 def parse_row(html_str: str) -> list[str]:
 
     try:
@@ -446,47 +466,67 @@ def parse_row(html_str: str) -> list[str]:
         for _ in range(3, len(parts), 5):
             course_name = "空堂 - Free Period" if "空堂" in parts[_] else f"{parts[_]} - {parts[_+1]}"
             courses.append(course_name)
-
         return [time_range, *courses]
 
     except Exception as e:
         CONSOLE_LOG.error(f"Paser row fail : {e}")
 
-def storedb_and_xlsx(year_text: str, semester_text: str) -> None:
+async def store_xlsx(year: str, 
+                     semester: str, 
+                     time_datas: Tuple[str], 
+                     html_datas: Tuple[str]) -> None:
 
     try:
-        excel_path: str                = os.path.join(".", f"schedule.xlsx")
+        courses_info: Tuple[Tuple[str]]  = tuple(parse_row(html) for html in html_datas)
 
-        time_headers: List[WebElement] = DRIVER.find_elements(By.CSS_SELECTOR, "table.table-bordered > thead > tr > th")
-        time_data: Tuple[str]          = ("", *(header.text for header in time_headers[1:6]))
+        df = pd.DataFrame(courses_info, columns=time_datas)
 
-        rows: List[WebElement]         = DRIVER.find_elements(By.CSS_SELECTOR, 'table.table-bordered > tbody > tr')[11:15]
-        rows_html: Tuple[str]          = (row.get_attribute('outerHTML') for row in rows)
-
-        courses_info: List[List[str]]  = [parse_row(html) for html in rows_html]
-
-        df = pd.DataFrame(courses_info, columns=time_data)
-
-        if not os.path.exists(excel_path):
+        if not os.path.exists("schedule.xlsx"):
             mode         = "w"
             sheet_exists = None
         else:
             mode         = "a"
             sheet_exists = "replace"
 
-        with pd.ExcelWriter(excel_path, mode=mode, engine="openpyxl", if_sheet_exists = sheet_exists) as writer:
-            df.to_excel(writer, sheet_name = f"{year_text}-{semester_text}", index = False)
+        with pd.ExcelWriter("schedule.xlsx", mode=mode, engine="openpyxl", if_sheet_exists = sheet_exists) as writer:
+            df.to_excel(writer, sheet_name = f"{year}-{semester}", index = False)
 
     except Exception as e:
-        CONSOLE_LOG.error(f"Store DB and xlsx {year_text}-{semester_text} timetable fail: {e}")
+        CONSOLE_LOG.error(f"Store xlsx {year}-{semester} timetable fail: {e}")
 
-def check_no_data_error() -> bool:
+async def store_db(year: str, 
+                   semester: str, 
+                   time_datas: Tuple[str], 
+                   html_datas: Tuple[str]) -> None:
 
-    return analysis_element(By.CLASS_NAME, "error-container", "presence") is not None
+    try:
+        courses_info: Tuple[Tuple[str]]  = tuple((f"{year}-{semester}", *(parse_row(html))) for html in html_datas)
+
+        await PSQL.upsert_sql(f"{year}-{semester}", courses_info)
+
+    except Exception as e:
+        CONSOLE_LOG.error(f"Store db {year}-{semester} fail: {e}")
+
+async def store_with(year_text: str, semester_text: str) -> None:
+
+    try:
+        time_headers: List[WebElement]   = DRIVER.find_elements(By.CSS_SELECTOR, "table.table-bordered > thead > tr > th")
+        time_datas: Tuple[str]           = ("", *(header.text for header in time_headers[1:6]))
+
+        rows: List[WebElement]           = DRIVER.find_elements(By.CSS_SELECTOR, 'table.table-bordered > tbody > tr')[11:15]
+        rows_html: Tuple[str]            = tuple(row.get_attribute('outerHTML') for row in rows)
+
+        await asyncio.gather(
+            store_xlsx(year_text, semester_text, time_datas, rows_html),
+            store_db(year_text, semester_text, time_datas, rows_html)
+        )
+
+    except Exception as e:
+        CONSOLE_LOG.error(f"Store with fail: {e}")
 
 def timetable_pic(year: str, semester: str) -> None:
 
-    schedule_info: str = os.path.join(IMG_PATH, f"schedule_info_{year}-{semester}.png")
+    schedule_path: str = os.path.join(IMG_PATH, f"schedule_info_{year}-{semester}.png")
 
     try:
         """
@@ -496,13 +536,13 @@ def timetable_pic(year: str, semester: str) -> None:
         table_border: WebElement = analysis_element(By.CLASS_NAME, "table-bordered", "presence")
 
         DRIVER.execute_script("arguments[0].scrollIntoView();", bottom)
-        table_border.screenshot(schedule_info)
-        CONSOLE_LOG.info(f"Take a picture of {year}-{semester} timetable to success")
+        table_border.screenshot(schedule_path)
+        CONSOLE_LOG.info(f"Take a picture of {year}-{semester} timetable success.")
 
     except Exception as e:
         CONSOLE_LOG.error(f"Take a picture of {year}-{semester} timetable fail : {e}")
 
-def paser_schedule() -> None:
+async def paser_schedule() -> None:
 
     try:
         """
@@ -528,25 +568,110 @@ def paser_schedule() -> None:
                 semester_select.select_by_index(j)
 
                 current_semester_text: str        = semester_select.first_selected_option.text
-                time.sleep(TIME_COUNTER())
+                await asyncio.sleep(TIME_COUNTER())
 
                 button: Optional[WebElement]      = analysis_element(By.CLASS_NAME, "btn-info")
                 send_click_to_element(button)
-                time.sleep(TIME_COUNTER())
+                await asyncio.sleep(TIME_COUNTER())
 
                 if check_no_data_error():
                     CONSOLE_LOG.info(f"There is no schedule : {current_year_text} - {current_semester_text}")
                     continue
 
-                storedb_and_xlsx(current_year_text, current_semester_text)
-                timetable_pic(current_year_text, current_semester_text)
+                await asyncio.gather(
+                    store_with(current_year_text, current_semester_text),
+                    asyncio.to_thread(timetable_pic, current_year_text, current_semester_text)
+                )
 
     except Exception as e:
         CONSOLE_LOG.error(f"Paser schedule fail : {e}")
 
+def save_chart_as_html(data: pd.DataFrame) -> None:
+
+    try:
+        data.columns: List[str] = ["Courses", "Credit course"]
+
+        courses_pie = px.pie(
+            data,
+            names  = "Courses",
+            values = "Credit course",
+            title  = "Course Distribution"
+            )
+        courses_pie.write_html("courses_pie.html")
+
+        courses_bar = px.bar(
+            data,
+            x     = "Courses",
+            y     = "Credit course",
+            title = "Course Statistics Bar Chart",
+            text  = "Credit course"
+            )
+        courses_bar.update_layout(
+            title = {
+                "text"   : "Course Statistics Bar Chart",
+                "x"      : 0.5,
+                },
+            xaxis_tickangle = -45
+            )
+        courses_bar.write_html("courses_bar.html")
+
+    except Exception as e:
+        CONSOLE_LOG.error(f"Save chart as html fail : {e}")
+
+def export_html_chart_as_image(data_name: str) -> None:
+
+    image_path: str = os.path.join(IMG_PATH, f"{data_name}.png")
+    html_path: str  = os.path.join(".",f"{data_name}.html")
+    url = f"file:///{os.path.abspath(html_path)}"
+
+    try:
+        if not os.path.exists(html_path):
+            raise ValueError(f"HTML file was created fail : {html_path}")
+
+        DRIVER.get(url)
+        plot: Optional[WebElement] = analysis_element(By.CSS_SELECTOR, "div.js-plotly-plot")
+        plot.screenshot(image_path)
+        CONSOLE_LOG.info(f"Export {data_name}.png chart success.")
+
+    except ValueError as ve:
+        CONSOLE_LOG.error(ve)
+    except Exception as e:
+        CONSOLE_LOG.error(f"Export html chart as image fail : {data_name} - {e}")
+
+async def analysis_courses() -> None:
+
+    try:
+        counts_courses: pd.DataFrame = await PSQL.fetch_sql()
+        save_chart_as_html(counts_courses)
+        export_html_chart_as_image("courses_pie")
+        export_html_chart_as_image("courses_bar")
+
+    except Exception as e:
+        CONSOLE_LOG.error(f"Analysis courses fail : {e}")
+
+async def notifiers_to_user() -> None:
+
+    """
+        After completing the course analysis, 
+        the system will automatically send the information to the users defined in the .env configuration file.
+
+        Since Twilio incurs costs, 
+        only a simple text description is provided here for demonstration purposes.
+    """
+    try:
+        message: str = "Course analysis is complete. You can now review the charts to obtain the information." 
+        await asyncio.gather(
+            send_mail(message, IMG_PATH),
+            send_line(message, IMG_PATH),
+            # short_msg("Courses processed.")
+        )
+
+    except Exception as e:
+        CONSOLE_LOG.error(f"Notifiers to user fail : {e}")
+
 async def main() -> None:
 
-    global ACCOUNT, PASSWORD, DRIVER, OCR_MODEL, CONSOLE_LOG
+    global ACCOUNT, PASSWORD, DRIVER, OCR_MODEL, CONSOLE_LOG, PSQL
 
     os.makedirs("imgs", exist_ok = True)
 
@@ -577,22 +702,31 @@ async def main() -> None:
         
         if "news.asp" not in DRIVER.current_url:
             CONSOLE_LOG.error("All login attempts fail. Exiting program...")
-            return 
+            return
 
         navigate_to_course()
         await asyncio.sleep(TIME_COUNTER())
 
-        paser_schedule()
-        await asyncio.sleep(1)
+        PSQL = MyPsql()
+        await paser_schedule()
+        await analysis_courses()
+        await notifiers_to_user()
+
+        return True
 
     except Exception as e:
         CONSOLE_LOG.error(f"Workflow fail : {e}")
 
     finally:
+        if PSQL:
+            await PSQL.close()
+            CONSOLE_LOG.info("Database quit.")
+
         if DRIVER is not None:
             DRIVER.quit()
             CONSOLE_LOG.info("DRIVER quit.")
 
+        PSQL         = None
         ACCOUNT      = None
         PASSWORD     = None
         DRIVER       = None
@@ -600,6 +734,11 @@ async def main() -> None:
         CONSOLE_LOG  = None
 
 if __name__ == "__main__":
-    
+
+    if not sys.platform.startswith("win32"):
+        print("This programe is for windows.")
+        sys.exit(1)
+
     setup_log()
     asyncio.run(main())
+    print("Program completed.")

@@ -1,58 +1,59 @@
-2025-08-26 21:58:46,791 - Console_log - INFO : DRIVER initialized success.
-2025-08-26 21:58:47,796 - Console_log - INFO : Login attempt 1 / 3
-2025-08-26 21:58:47,796 - Console_log - INFO : Start to concurrent operations...
-2025-08-26 21:58:47,796 - Console_log - INFO : Start to captcha process...
-2025-08-26 21:58:47,818 - Console_log - INFO : Start to credential input...
-2025-08-26 21:58:48,676 - Console_log - INFO : Send key success.
-2025-08-26 21:58:48,952 - Console_log - INFO : Send key success.
-2025-08-26 21:58:48,952 - Console_log - INFO : Input credentials complete.
-2025-08-26 21:58:49,116 - Console_log - WARNING : OCR fail : 8863
-2025-08-26 21:58:49,116 - Console_log - INFO : Process captcha complete.
-2025-08-26 21:58:49,117 - Console_log - INFO : Concurrent operations complete.
-2025-08-26 21:58:49,407 - Console_log - INFO : Send click success.
-2025-08-26 21:58:49,408 - Console_log - WARNING : Fail to process captcha.
-2025-08-26 21:58:49,780 - Console_log - WARNING : Login fail, retrying...
-2025-08-26 21:58:50,537 - Console_log - INFO : Login attempt 2 / 3
-2025-08-26 21:58:50,538 - Console_log - INFO : Start to concurrent operations...
-2025-08-26 21:58:50,538 - Console_log - INFO : Start to captcha process...
-2025-08-26 21:58:50,547 - Console_log - INFO : Start to credential input...
-2025-08-26 21:58:51,605 - Console_log - WARNING : OCR fail : 2587
-2025-08-26 21:58:51,674 - Console_log - INFO : Send key success.
-2025-08-26 21:58:51,674 - Console_log - INFO : Process captcha complete.
-2025-08-26 21:58:51,955 - Console_log - INFO : Send key success.
-2025-08-26 21:58:51,955 - Console_log - INFO : Input credentials complete.
-2025-08-26 21:58:51,955 - Console_log - INFO : Concurrent operations complete.
-2025-08-26 21:58:52,231 - Console_log - INFO : Send click success.
-2025-08-26 21:58:52,231 - Console_log - WARNING : Fail to process captcha.
-2025-08-26 21:58:53,170 - Console_log - WARNING : Login fail, retrying...
-2025-08-26 21:58:53,436 - Console_log - INFO : Login attempt 3 / 3
-2025-08-26 21:58:53,437 - Console_log - INFO : Start to concurrent operations...
-2025-08-26 21:58:53,437 - Console_log - INFO : Start to captcha process...
-2025-08-26 21:58:53,447 - Console_log - INFO : Start to credential input...
-2025-08-26 21:58:54,018 - Console_log - INFO : Send key success.
-2025-08-26 21:58:54,299 - Console_log - INFO : Send key success.
-2025-08-26 21:58:54,300 - Console_log - INFO : Input credentials complete.
-2025-08-26 21:58:54,367 - Console_log - INFO : OCR captcha success recognized : 31742
-2025-08-26 21:58:54,368 - Console_log - INFO : Process captcha complete.
-2025-08-26 21:58:54,368 - Console_log - INFO : Concurrent operations complete.
-2025-08-26 21:58:55,681 - Console_log - INFO : Send key success.
-2025-08-26 21:58:56,433 - Console_log - INFO : Send click success.
-2025-08-26 21:58:57,081 - Console_log - INFO : Login success.
-2025-08-26 21:58:57,596 - Console_log - INFO : Send click success.
-2025-08-26 21:58:57,865 - Console_log - INFO : Send click success.
-2025-08-26 21:58:58,979 - Console_log - INFO : Send click success.
-2025-08-26 21:58:59,955 - Console_log - INFO : Send click success.
-2025-08-26 21:58:59,957 - Console_log - INFO : Navigate to course success.
-2025-08-26 21:59:01,492 - Console_log - INFO : Send click success.
-2025-08-26 21:59:01,906 - Console_log - INFO : Take a picture of 112-1 timetable to success
-2025-08-26 21:59:03,118 - Console_log - INFO : Send click success.
-2025-08-26 21:59:04,007 - Console_log - INFO : Take a picture of 112-2 timetable to success
-2025-08-26 21:59:05,237 - Console_log - INFO : Send click success.
-2025-08-26 21:59:05,918 - Console_log - INFO : Take a picture of 113-1 timetable to success
-2025-08-26 21:59:06,795 - Console_log - INFO : Send click success.
-2025-08-26 21:59:07,749 - Console_log - INFO : Take a picture of 113-2 timetable to success
-2025-08-26 21:59:08,624 - Console_log - INFO : Send click success.
-2025-08-26 21:59:09,044 - Console_log - INFO : Take a picture of 114-1 timetable to success
-2025-08-26 21:59:09,719 - Console_log - INFO : Send click success.
-2025-08-26 21:59:10,658 - Console_log - INFO : There is no schedule : 114 - 2
-2025-08-26 21:59:11,857 - Console_log - INFO : DRIVER quit.
+2025-09-13 14:03:01,453 - Console_log - INFO : LOG initialized success.
+2025-09-13 14:03:01,457 - Console_log - INFO : Environment Variables initialized success.
+2025-09-13 14:03:05,048 - Console_log - INFO : DRIVER initialized success.
+2025-09-13 14:03:05,730 - Console_log - INFO : OCR MODEL initialized success.
+2025-09-13 14:03:05,988 - Console_log - INFO : Login attempt 1 / 3
+2025-09-13 14:03:05,988 - Console_log - INFO : Start to concurrent operations...
+2025-09-13 14:03:05,988 - Console_log - INFO : Start to captcha process...
+2025-09-13 14:03:06,006 - Console_log - INFO : Start to credential input...
+2025-09-13 14:03:06,706 - Console_log - INFO : Send key success.
+2025-09-13 14:03:07,226 - Console_log - INFO : Send key success.
+2025-09-13 14:03:07,235 - Console_log - INFO : Input credentials complete.
+2025-09-13 14:03:07,288 - Console_log - INFO : OCR captcha success recognized : 79356
+2025-09-13 14:03:07,289 - Console_log - INFO : Process captcha complete.
+2025-09-13 14:03:07,289 - Console_log - INFO : Concurrent operations complete.
+2025-09-13 14:03:08,347 - Console_log - INFO : Send key success.
+2025-09-13 14:03:09,435 - Console_log - INFO : Send click success.
+2025-09-13 14:03:09,762 - Console_log - INFO : Login success.
+2025-09-13 14:03:10,412 - Console_log - INFO : Send click success.
+2025-09-13 14:03:10,682 - Console_log - INFO : Send click success.
+2025-09-13 14:03:11,837 - Console_log - INFO : Send click success.
+2025-09-13 14:03:12,804 - Console_log - INFO : Send click success.
+2025-09-13 14:03:12,804 - Console_log - INFO : Navigate to course success.
+2025-09-13 14:03:15,079 - Console_log - INFO : Send click success.
+2025-09-13 14:03:15,517 - Console_log - INFO : fetcher does not exist, create...
+2025-09-13 14:03:15,536 - Console_log - INFO : Take a picture of 112-1 timetable success.
+2025-09-13 14:03:15,723 - Console_log - INFO : Johnson does not exist, create...
+2025-09-13 14:03:15,790 - Console_log - INFO : Schema course ensured (owner = Johnson).
+2025-09-13 14:03:15,798 - Console_log - INFO : Table course.fetcher_course ensured (owner = Johnson)
+2025-09-13 14:03:15,798 - Console_log - INFO : Granted privileges to Johnson
+2025-09-13 14:03:15,801 - Console_log - INFO : Set trigger success.
+2025-09-13 14:03:15,859 - Console_log - INFO : Transaction committed successfully.
+2025-09-13 14:03:15,860 - Console_log - INFO : Upsert success for term 112-1: 4 rows.
+2025-09-13 14:03:16,525 - Console_log - INFO : Send click success.
+2025-09-13 14:03:17,446 - Console_log - INFO : Transaction committed successfully.
+2025-09-13 14:03:17,456 - Console_log - INFO : Upsert success for term 112-2: 4 rows.
+2025-09-13 14:03:17,545 - Console_log - INFO : Take a picture of 112-2 timetable success.
+2025-09-13 14:03:18,906 - Console_log - INFO : Send click success.
+2025-09-13 14:03:19,631 - Console_log - INFO : Transaction committed successfully.
+2025-09-13 14:03:19,640 - Console_log - INFO : Upsert success for term 113-1: 4 rows.
+2025-09-13 14:03:19,710 - Console_log - INFO : Take a picture of 113-1 timetable success.
+2025-09-13 14:03:20,276 - Console_log - INFO : Send click success.
+2025-09-13 14:03:21,328 - Console_log - INFO : Transaction committed successfully.
+2025-09-13 14:03:21,339 - Console_log - INFO : Upsert success for term 113-2: 4 rows.
+2025-09-13 14:03:21,411 - Console_log - INFO : Take a picture of 113-2 timetable success.
+2025-09-13 14:03:22,326 - Console_log - INFO : Send click success.
+2025-09-13 14:03:23,342 - Console_log - INFO : Transaction committed successfully.
+2025-09-13 14:03:23,353 - Console_log - INFO : Upsert success for term 114-1: 4 rows.
+2025-09-13 14:03:23,418 - Console_log - INFO : Take a picture of 114-1 timetable success.
+2025-09-13 14:03:24,175 - Console_log - INFO : Send click success.
+2025-09-13 14:03:24,522 - Console_log - INFO : There is no schedule : 114 - 2
+2025-09-13 14:03:24,524 - Console_log - INFO : Transaction committed successfully.
+2025-09-13 14:03:25,469 - Console_log - INFO : Export courses_pie.png chart success.
+2025-09-13 14:03:26,157 - Console_log - INFO : Export courses_bar.png chart success.
+2025-09-13 14:03:28,046 - Console_log - INFO : Short msg success.
+2025-09-13 14:03:30,547 - Console_log - INFO : SMTP Login success.
+2025-09-13 14:03:37,607 - Console_log - INFO : Send mail success. TO : kusogame68@gmail.com
+2025-09-13 14:03:53,432 - Console_log - INFO : Send line success.
+2025-09-13 14:03:53,435 - Console_log - INFO : Database quit.
+2025-09-13 14:03:53,648 - Console_log - INFO : DRIVER quit.
