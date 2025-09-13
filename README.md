@@ -58,7 +58,7 @@ The project follows a modular asynchronous architecture:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/asyncio-course-fetcher.git
+   git clone https://github.com/kusogame68/asyncio-course-fetcher.git
    cd asyncio-course-fetcher
    ```
 
