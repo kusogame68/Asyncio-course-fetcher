@@ -44,8 +44,8 @@ from selenium.webdriver.support.ui import WebDriverWait, Select
 # Local Imports
 # ==============================================================================
 
-from notifiers import send_line, send_mail, short_msg
-from sqltools import MyPsql
+from Notifiers import send_line, send_mail, short_msg
+from Sqltools import MyPsql
 
 
 # ==============================================================================
