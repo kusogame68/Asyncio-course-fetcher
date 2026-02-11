@@ -12,9 +12,9 @@ This application automatically logs into the MUST University student portal, ext
 
 The project follows a modular asynchronous architecture:
 
-- **Main Application** (`asyncio_course_fetcher.py`) - Core workflow orchestration
-- **Database Layer** (`sqltools.py`) - PostgreSQL operations with connection pooling
-- **Notification System** (`notifiers.py`) - Multi-channel communication (Email, LINE, SMS)
+- **Main Application** (`Asyncio_course_fetcher.py`) - Core workflow orchestration
+- **Database Layer** (`Sqltools.py`) - PostgreSQL operations with connection pooling
+- **Notification System** (`Notifiers.py`) - Multi-channel communication (Email, LINE, SMS)
 - **Configuration** - Environment variables and YAML-based settings
 
 ## Key Features
@@ -58,7 +58,7 @@ The project follows a modular asynchronous architecture:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/kusogame68/asyncio-course-fetcher.git
+   git clone https://github.com/kusogame68/Asyncio-course-fetcher.git
    cd Asyncio-course-fetcher
    ```
 
@@ -81,7 +81,7 @@ The project follows a modular asynchronous architecture:
 Run the application with a single command:
 
 ```bash
-uv run asyncio_course_fetcher.py
+uv run Asyncio_course_fetcher.py
 ```
 
 The application will:
