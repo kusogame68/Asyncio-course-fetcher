@@ -27,8 +27,8 @@ from asyncpg.utils import _quote_ident
 # ==============================================================================
 # Global Variables
 # ==============================================================================
-console_log = logging.getLogger("Console_log")
 
+console_log = logging.getLogger("Console_log")
 
 # ==============================================================================
 # In this project, using asyncpg is not strictly necessary,
@@ -46,6 +46,8 @@ console_log = logging.getLogger("Console_log")
 #     # from dotenv import load_dotenv
 #     # load_dotenv()
 # ==============================================================================
+
+
 class MyPsql:
     def __init__(self):
         # Database connection state
@@ -265,7 +267,7 @@ class MyPsql:
                 $$ language plpgsql;
 
                 drop trigger if exists trg_set_updated_at on {q_sch}.{q_tb};
-                
+
                 create trigger trg_set_updated_at
                 before update on {q_sch}.{q_tb}
                 for each row when (old is distinct from new)
@@ -297,7 +299,6 @@ class MyPsql:
             else:
                 console_log.info("Transaction committed successfully.")
                 await tx.commit()
-
 
     # --------------------------------------------------------------------------
     # Public API
@@ -352,7 +353,7 @@ class MyPsql:
 
             pattern: Pattern[str] = re.compile(r'\(.{1,3}\)')
             courses: List[str] = [pattern.sub('', row[0]).strip() for row in rows]
-            
+
             counts_courses: pd.DataFrame = pd.Series(courses).value_counts().reset_index()
             return counts_courses
         except Exception as e:

@@ -21,6 +21,7 @@ from typing import Optional, Dict, Tuple
 # ==============================================================================
 # Third-Party Imports
 # ==============================================================================
+
 import requests
 from linebot import LineBotApi
 from linebot.models import TextSendMessage, ImageSendMessage
@@ -30,15 +31,15 @@ from twilio.rest import Client
 # ==============================================================================
 # Global Variables
 # ==============================================================================
-console_log = logging.getLogger("Console_log")
 
+console_log = logging.getLogger("Console_log")
 
 # ==============================================================================
 # NOTE:
-# The purpose of this notifiers.py module is to assist the asyncio_course_fetcher.py main program
+# The purpose of this Notifiers.py module is to assist the Asyncio-course-fetcher.py main program
 # in sending notifications after analysis is completed.
 # It is not intended to run independently, but rather to be invoked by the main program.
-
+#
 # load_dotenv() is invoked globally by the main program,
 # so when the main program imports this module, it does not need to call load_dotenv() again.
 #     # from dotenv import load_dotenv
@@ -49,6 +50,8 @@ console_log = logging.getLogger("Console_log")
 # ==============================================================================
 # Private Initialization Methods
 # ==============================================================================
+
+
 def _set_communication_var(mode: str) -> Optional[Dict[str, str]]:
     try:
         match mode:
@@ -90,13 +93,16 @@ def _upload_to_0x0(file_path: str) -> str:
     resp.raise_for_status()
     return resp.text.strip()
 
+
 # ==============================================================================
 # Public API
 # ==============================================================================
 # Methods below are intended for external use.
+
+
 async def short_msg(text: str) -> None:
     # NOTE: short_msg() is disabled by default due to Twilio free tier limitations.
-    # To enable Twilio notifications, toggle the switch at: asyncio-course-fetcher.py:647
+    # To enable Twilio notifications, toggle the switch at: Asyncio-course-fetcher.py:647
     try:
         conf: Dict[str, str] = _set_communication_var("short_msg")
         if not conf:

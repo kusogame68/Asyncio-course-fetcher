@@ -47,7 +47,6 @@ from selenium.webdriver.support.ui import WebDriverWait, Select
 from Notifiers import send_line, send_mail, short_msg
 from Sqltools import MyPsql
 
-
 # ==============================================================================
 # Constants
 # ==============================================================================
@@ -239,7 +238,7 @@ def ocr_img_sync(element: WebElement) -> Optional[str]:
         #     - For common numbers, a kernel of np.ones((2, 3), np.uint8) works best.
         #     - For the number 1, a kernel of (3, 5) is more effective.
         #     - Numbers 3 and 4 are prone to failure due to their severe curvature.
-
+        #
         # Note:
         #     - Testing on different computers shows that recognition performance can still vary,
         #         even with identical CPUs and GPUs.
@@ -650,7 +649,7 @@ async def analysis_courses() -> None:
 async def notifiers_to_user() -> None:
     # After completing the course analysis, 
     # the system will automatically send the information to the users defined in the .env configuration file.
-
+    #
     # Since Twilio incurs costs, 
     # only a simple text description is provided here for demonstration purposes.
     try:
