@@ -81,17 +81,16 @@ def _iter_images(img_dir: str) -> Tuple[str]:
     return (os.path.join(img_dir, file) for file in os.listdir(img_dir) if not pattern.match(file))
 
 
-def _upload_to_0x0(file_path: str) -> str:
+def _upload_to_litterbox(file_path: str) -> str:
     with open(file_path, "rb") as file:
-        resp = requests.post(
-            "https://0x0.st",
-            files = {"file": file},
-            data = {"expires": 720},
-            headers = {"User-Agent": "asyncio_course_fetcher/1.0 (+https://github.com/kusogame68/Asyncio-course-fetcher)"},
-            timeout = 10
+        req = requests.post(
+            "https://litterbox.catbox.moe/resources/internals/api.php",
+            data={"reqtype": "fileupload", "time": "1h"},
+            files={"fileToUpload": file},
+            timeout=10,
         )
-    resp.raise_for_status()
-    return resp.text.strip()
+    req.raise_for_status()
+    return req.text.strip()
 
 
 # ==============================================================================
@@ -186,17 +185,17 @@ async def send_line(text: str, img_path: str) -> None:
     # Solution:
     #     After trying multiple approaches (e.g., Google Drive, cloud storage APIs, etc.),
     #     the most suitable free solution without extra registration and with temporary storage
-    #     is provided by https://0x0.st/.
-    #     - 0x0.st is a temporary file hosting service that immediately returns an HTTPS link after upload
-    #     - An expiration time (expires) can be set, but files are actually retained for at least 30 days
-    #     - Ideal for one-time testing or temporary image delivery, reducing the risk of long-term data exposure on the internet
-    #     - For details and usage restrictions, see the official documentation: https://0x0.st/
+    #     is provided by https://litterbox.catbox.moe/.
+    #     - Catbox is a temporary file hosting service that immediately returns an HTTPS link after upload.
+    #     - An expiration time (time) can be explicitly set (e.g., '1h', '12h', '24h', '72h'), automatically deleting files after expiration.
+    #     - Ideal for one-time testing or temporary image delivery, reducing the risk of long-term data exposure on the internet.
+    #     - For details and usage restrictions, see the official documentation: https://litterbox.catbox.moe/tools.php
     try:
         conf: Dict[str, str] = _set_communication_var("send_line")
         line_bot_api = LineBotApi(conf["ACCESS_TOKEN"])
 
         for path in _iter_images(img_path):
-            url: str = _upload_to_0x0(path)
+            url: str = _upload_to_litterbox(path)
             line_bot_api.push_message(
                 conf["USER_ID"],
                 ImageSendMessage(original_content_url = url, preview_image_url = url)

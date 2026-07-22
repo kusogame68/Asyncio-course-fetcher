@@ -39,6 +39,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait, Select
+from webdriver_manager.chrome import ChromeDriverManager
 
 # ==============================================================================
 # Local Imports
@@ -193,7 +194,7 @@ def setup_driver() -> None:
             for config in configs["driver"]:
                 chrome_options.add_argument(config)
 
-        driver = uc.Chrome(options = chrome_options)
+        driver = uc.Chrome(options = chrome_options, driver_executable_path = ChromeDriverManager().install())
         driver.set_page_load_timeout(30)
 
         console_log.info("Driver initialized success.")

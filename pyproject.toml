@@ -21,6 +21,7 @@ dependencies = [
     "setuptools>=80.9.0",
     "twilio>=9.8.0",
     "undetected-chromedriver==3.5.5",
+    "webdriver-manager>=4.1.2",
 ]
 
 [dependency-groups]

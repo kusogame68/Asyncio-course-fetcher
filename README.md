@@ -19,33 +19,33 @@ The project follows a modular asynchronous architecture:
 
 ## Key Features
 
-### 🚀 Asynchronous Performance
+### Asynchronous Performance
 - Fully async workflow using `asyncio` for optimal I/O handling
 - Concurrent processing of login credentials and CAPTCHA recognition
 - Non-blocking OCR processing in ThreadPoolExecutor
 - Significant performance improvements over synchronous implementations
 
-### 🔐 Automated Authentication
+### Automated Authentication
 - Selenium WebDriver automation with undetected Chrome
-- Advanced CAPTCHA recognition using PaddleOCR
+- CAPTCHA recognition using PaddleOCR
 - Image preprocessing (denoising, dilation) for enhanced OCR accuracy
-- Intelligent retry mechanisms with exponential backoff
+- Retry logic for failed requests
 
-### 📊 Data Management
+### Data Management
 - PostgreSQL integration with asyncpg for high-performance database operations
 - Automatic database schema creation and user privilege management
 - UPSERT operations for data consistency
 - Excel export functionality for offline analysis
 
-### 📈 Analytics & Visualization
+### Analytics & Visualization
 - Course distribution analysis with interactive charts
 - Plotly-powered visualizations (pie charts, bar charts)
 - Automatic chart generation and export
 
-### 📱 Multi-Channel Notifications
+### Multi-Channel Notifications
 - **Email**: SMTP with image attachments
 - **LINE Bot**: Automated messaging with temporary image hosting
-- **SMS**: Twilio integration for critical alerts
+- **SMS**: Automated dispatch via Twilio
 
 ## Environment Requirements
 
@@ -105,13 +105,13 @@ The application will:
 ## Technical Details
 
 ### OCR Processing
-The application employs sophisticated image processing for CAPTCHA recognition:
+The application uses image processing for CAPTCHA recognition:
 
-1. **Screenshot Capture** - High-resolution element screenshots
+1. **Screenshot Capture** - Element screenshots
 2. **Preprocessing** - Grayscale conversion and binary thresholding
 3. **Denoising** - Noise reduction for cleaner text extraction
 4. **Dilation** - Character enhancement using morphological operations
-5. **Recognition** - PaddleOCR with English language model
+5. **Recognition** - PaddleOCR model
 
 ### Asynchronous Optimizations
 - **Concurrent Input** - Account and password fields populated simultaneously
@@ -121,8 +121,8 @@ The application employs sophisticated image processing for CAPTCHA recognition:
 
 ### Error Handling
 - Comprehensive exception handling with detailed logging
-- Graceful degradation for failed notification channels
-- Automatic retry mechanisms for transient failures
+- Graceful error handling
+- Automatic retry mechanisms
 - Resource cleanup in finally blocks
 
 ## Development History
@@ -176,14 +176,6 @@ Monitor these indicators for application health:
 - Database connection stability
 - Notification delivery status
 
-## License
+## Disclaimer
 
 This project is intended for educational and personal use. Ensure compliance with your institution's terms of service when using automated tools to access academic portals.
-
-## Support
-
-For issues related to:
-- **OCR Recognition**: Check image preprocessing parameters
-- **Database Connections**: Verify PostgreSQL configuration
-- **Notifications**: Confirm API credentials and quotas
-- **General Issues**: Check logs in `Asyncio.log` for detailed error information
