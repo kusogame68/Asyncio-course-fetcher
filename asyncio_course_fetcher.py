@@ -45,8 +45,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 # Local Imports
 # ==============================================================================
 
-from Notifiers import send_line, send_mail, short_msg
-from Sqltools import MyPsql
+from notifiers import send_line, send_mail, short_msg
+from sqltools import MyPsql
 
 # ==============================================================================
 # Constants

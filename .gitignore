@@ -6,6 +6,10 @@ dist/
 wheels/
 *.egg-info
 
+# Data and generated reports
+*.xlsx
+*.html
+
 # Virtual environments
 .venv
 

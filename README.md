@@ -1,8 +1,8 @@
-# Asyncio Course Fetcher
+# Asyncio-Course-Fetcher
 
 An asynchronous Python application that automates university course schedule retrieval, processing, and notification delivery. This project evolved from initial synchronous/asynchronous performance comparisons to become a fully-featured, production-ready course management system.
 
-![Email notification screenshot](./resaults/send_mail.png)
+![Email notification screenshot](./results/send_mail.png)
 
 ## Overview
 
@@ -12,37 +12,42 @@ This application automatically logs into the MUST University student portal, ext
 
 The project follows a modular asynchronous architecture:
 
-- **Main Application** (`Asyncio-course-fetcher.py`) - Core workflow orchestration
-- **Database Layer** (`Sqltools.py`) - PostgreSQL operations with connection pooling
-- **Notification System** (`Notifiers.py`) - Multi-channel communication (Email, LINE, SMS)
+- **Main Application** (`asyncio_course_fetcher.py`) - Core workflow orchestration
+- **Database Layer** (`sqltools.py`) - PostgreSQL operations with connection pooling
+- **Notification System** (`notifiers.py`) - Multi-channel communication (Email, LINE, SMS)
 - **Configuration** - Environment variables and YAML-based settings
 
 ## Key Features
 
 ### Asynchronous Performance
+
 - Fully async workflow using `asyncio` for optimal I/O handling
 - Concurrent processing of login credentials and CAPTCHA recognition
 - Non-blocking OCR processing in ThreadPoolExecutor
 - Significant performance improvements over synchronous implementations
 
 ### Automated Authentication
+
 - Selenium WebDriver automation with undetected Chrome
 - CAPTCHA recognition using PaddleOCR
 - Image preprocessing (denoising, dilation) for enhanced OCR accuracy
 - Retry logic for failed requests
 
 ### Data Management
+
 - PostgreSQL integration with asyncpg for high-performance database operations
 - Automatic database schema creation and user privilege management
 - UPSERT operations for data consistency
 - Excel export functionality for offline analysis
 
 ### Analytics & Visualization
+
 - Course distribution analysis with interactive charts
 - Plotly-powered visualizations (pie charts, bar charts)
 - Automatic chart generation and export
 
 ### Multi-Channel Notifications
+
 - **Email**: SMTP with image attachments
 - **LINE Bot**: Automated messaging with temporary image hosting
 - **SMS**: Automated dispatch via Twilio
@@ -57,17 +62,20 @@ The project follows a modular asynchronous architecture:
 ## Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/kusogame68/Asyncio-course-fetcher.git
    cd Asyncio-course-fetcher
    ```
 
 2. **Install dependencies**
+
    ```bash
    uv sync
    ```
 
 3. **Configure environment variables**
+
    ```bash
    # Edit .env with your credentials
    ```
@@ -81,10 +89,11 @@ The project follows a modular asynchronous architecture:
 Run the application with a single command:
 
 ```bash
-uv run Asyncio-course-fetcher.py
+uv run asyncio_course_fetcher.py
 ```
 
 The application will:
+
 1. Initialize all components (OCR, WebDriver, Database)
 2. Authenticate with the university portal
 3. Navigate to course schedules
@@ -96,15 +105,17 @@ The application will:
 ## Output
 
 ### Generated Files
+
 - `schedule.xlsx` - Excel workbook with course data by semester
 - `courses_pie.html` / `courses_bar.html` - Interactive charts
 - `./imgs/schedule_info_[year]-[semester].png` - Schedule screenshots
 - `./imgs/courses_pie.png` / `courses_bar.png` - Chart images
-- `Asyncio.log` - Detailed execution logs
+- `asyncio.log` - Detailed execution logs
 
 ## Technical Details
 
 ### OCR Processing
+
 The application uses image processing for CAPTCHA recognition:
 
 1. **Screenshot Capture** - Element screenshots
@@ -114,12 +125,14 @@ The application uses image processing for CAPTCHA recognition:
 5. **Recognition** - PaddleOCR model
 
 ### Asynchronous Optimizations
+
 - **Concurrent Input** - Account and password fields populated simultaneously
 - **Background OCR** - CPU-intensive processing moved to thread pool
 - **Connection Pooling** - Efficient database connection management
 - **Transaction Management** - ACID compliance with proper rollback handling
 
 ### Error Handling
+
 - Comprehensive exception handling with detailed logging
 - Graceful error handling
 - Automatic retry mechanisms
@@ -138,24 +151,29 @@ This project evolved through several phases:
 ## Known Issues & Considerations
 
 ### Environment-Specific OCR Variations
+
 OCR accuracy may vary between different environments due to:
+
 - Hardware differences (CPU/GPU variations)
 - Display scaling and DPI settings
 - OpenCV/Pillow version differences
 - Screenshot resolution variations
 
 **Mitigation Strategies:**
+
 - Standardize library versions using `uv sync`
 - Configure consistent browser window sizes
 - Adjust preprocessing parameters for specific environments
 - Monitor OCR success rates and fine-tune accordingly
 
 ### Browser Detection
+
 - Uses `undetected-chromedriver` to avoid bot detection
 - Randomized user agents for additional stealth
 - May require updates as detection methods evolve
 
 ### Rate Limiting
+
 - Implements random delays between operations
 - Respects server response times
 - May need adjustment for different network conditions
@@ -163,14 +181,18 @@ OCR accuracy may vary between different environments due to:
 ## Monitoring & Maintenance
 
 ### Logs
+
 Comprehensive logging is available at multiple levels:
+
 - **INFO**: General workflow progress
 - **DEBUG**: Detailed operation traces
 - **WARNING**: Non-critical issues
 - **ERROR**: Failure conditions requiring attention
 
 ### Health Checks
+
 Monitor these indicators for application health:
+
 - Login success rates
 - OCR recognition accuracy
 - Database connection stability
